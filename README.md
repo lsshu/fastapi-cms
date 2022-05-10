@@ -5,16 +5,13 @@ _admin@lsshu.cn_
 ```shell
 pip install lsshu-cms
 ```
-#### 其它依赖
-```shell
-pip install uvicorn fastapi sqlalchemy sqlalchemy_mptt python-multipart hashids passlib python-jose bcrypt websockets
-```
+
 ## 使用
 _1、在项目根目录新建文件 **`main.py`**_ 
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app import router
+from lsshu.oauth.main import router as router_oauth
 
 app = FastAPI(
     title='Base API Docs',
@@ -28,7 +25,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(router)
+app.include_router(router_oauth, prefix="/api")
 if __name__ == '__main__':
     import uvicorn
 
@@ -37,73 +34,57 @@ if __name__ == '__main__':
 
 _2、在项目根目录新建python包 **`app`** 在包app下打开文件 **`__init__.py`**_ 
 ```python
-from fastapi import APIRouter
-
-from lsshu.oauth import router as router_oauth
-
-router = APIRouter()
-router.include_router(router_oauth)
-
-from app.demo import router as router_demo
-router.include_router(router_demo)
-
 if __name__ == '__main__':
-    from lsshu.db import Engine, Model
-
-    from app.demo import APP_PERMISSION as PERMISSION_DEMO
+    from lsshu.oauth.model import Model, Engine
 
     Model.metadata.create_all(Engine)  # 创建表结构
 
-    APP_PERMISSIONS = [
-        PERMISSION_DEMO
-    ]
+    APP_PERMISSIONS = []
 
     from config import OAUTH_ADMIN_USERS
-    from lsshu.oauth.helpers import store_permissions, init_user_and_password
+    from lsshu.internal.helpers import store_permissions, init_user_and_password
 
     store_permissions(APP_PERMISSIONS)  # 初始化权限
     init_user_and_password(OAUTH_ADMIN_USERS)  # 初始化授权用户
-
 ```
 
-_3、在包app下新建python包 **`demo`** 在包demp下打开文件 **`__init__.py`**_ 
+_3、在包app下新建python包 **`demo`** 在包demp下新建文件 **`model.py`**_ 
 ```python
-from fastapi import APIRouter
-from app.demo.project import router as router_project, permission as permission_project
+from sqlalchemy import Column, String
 
-router = APIRouter()
-router.include_router(router_project)
+from lsshu.internal.db import Model
+from lsshu.internal.method import plural
 
-name = __name__.capitalize()
-APP_PERMISSION = {
-    "name": "demo", "scope": name, "children": [
-        permission_project
-    ]
-}
+name = plural(__name__.capitalize())
+table_name = name.replace('.', '_')
+permission = {"name": "Demo", "scope": name, "action": [{"name": "de", "scope": "de"}]}
 
+
+class Models(Model):
+    """ 模型 """
+    __tablename__ = table_name
+    name = Column(String(15), nullable=False, unique=True, comment="名称")
 ```
 
-_4、在包demo下新建文件 **`project.py`**_ 
+_4、在包demo下新建文件 **`crud.py`**_ 
 ```python
-"""
-XX操作
-"""
+from lsshu.demo.model import Models
+from lsshu.internal.crud import BaseCRUD
+
+
+class CRUD(BaseCRUD):
+    """表操作"""
+    params_model = Models
+```
+
+_5、在包demo下新建文件 **`schema.py`**_ 
+```python
 from datetime import datetime
 from typing import Optional, List
 
-from fastapi import Security, Depends, APIRouter, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String, TIMESTAMP
-from sqlalchemy.orm import Session
 
-from lsshu import BaseCRUD, Schemas, SchemasPaginate, plural
-from lsshu.db import dbs, Model
-from lsshu.oauth import SchemasOAuthScopes, auth_user
-
-name = plural(__name__.capitalize())
-scopes = [name, ]
-tags = [name, ]
-permission = {"name": "project", "scope": name, "action": [{"name": "pro", "scope": "pro"}]}
+from lsshu.internal.schema import SchemasPaginate
 
 
 class SchemasResponse(BaseModel):
@@ -126,46 +107,56 @@ class SchemasPaginateItem(SchemasPaginate):
     items: List[SchemasResponse]
 
 
-table_name = name.replace('.', '_')
+class SchemasParams(BaseModel):
+    pass
+```
+_6、在包demo下新建文件 **`main.py`**_ 
+```python
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, status, Security
+from sqlalchemy.orm import Session
+
+from lsshu.internal.db import dbs
+from lsshu.internal.depends import model_screen_params, auth_user
+from lsshu.internal.schema import ModelScreenParams, Schemas
+from lsshu.oauth.user.schema import SchemasOAuthScopes
+
+from .crud import CRUD
+from .model import name as name
+from .schema import SchemasResponse, SchemasParams, SchemasPaginateItem, SchemasStoreUpdate
+
+router = APIRouter(tags=["Demo"])
+scopes = [name, ]
 
 
-class Models(Model):
-    """ 模型 """
-    __tablename__ = table_name
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    name = Column(String(15), nullable=False, unique=True, comment="名称")
-    created_at = Column(TIMESTAMP, nullable=True, default=datetime.now, comment="创建日期")
-    updated_at = Column(TIMESTAMP, nullable=True, default=datetime.now, onupdate=datetime.now, comment="更新日期")
-    deleted_at = Column(TIMESTAMP, nullable=True, comment="删除日期")
-
-
-class CRUD(BaseCRUD):
-    """表操作"""
-    params_model = Models
-    params_pseudo_deletion = True  # 伪删除
-
-
-router = APIRouter()
-
-
-@router.get('/{}'.format(name), name="get {}".format(name), tags=tags)
-async def models(db: Session = Depends(dbs), page: Optional[int] = 1, limit: Optional[int] = 25,
-                 name: Optional[str] = None, auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes)):
+@router.get('/{}'.format(name), name="get {}".format(name))
+async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_screen_params),
+                     auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.list" % name])):
     """
     :param db:
-    :param page:
-    :param limit:
-    :param name:
+    :param params:
     :param auth:
     :return:
     """
-    db_list = CRUD.paginate(db=db, page=page, limit=limit, where=("name", "like", name))
-    return Schemas(data=SchemasPaginateItem(**db_list))
+    db_model_list = CRUD.paginate(db=db, screen_params=params)
+    return Schemas(data=SchemasPaginateItem(**db_model_list))
 
 
-@router.get('/{}/{{pk}}'.format(name), name="get {}".format(name), tags=tags)
-async def get_model(pk: int, db: Session = Depends(dbs),
-                    auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes)):
+@router.get('/{}.params'.format(name), name="get {}".format(name))
+async def params_models(db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.list" % name])):
+    """
+    :param db:
+    :param auth:
+    :return:
+    """
+
+    data = {}
+    return Schemas(data=SchemasParams(**data))
+
+
+@router.get('/{}/{{pk}}'.format(name), name="get {}".format(name))
+async def get_model(pk: int, db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.get" % name])):
     """
     :param pk:
     :param db:
@@ -174,12 +165,11 @@ async def get_model(pk: int, db: Session = Depends(dbs),
     """
     db_model = CRUD.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="{} not found".format(name.capitalize()))
-    return Schemas(data=SchemasResponse(**db_model.to_dict()))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(name.capitalize()))
+    return Schemas(data=SchemasResponse(**db_model))
 
 
-@router.post('/{}'.format(name), name="get {}".format(name), tags=tags)
+@router.post('/{}'.format(name), name="get {}".format(name))
 async def store_model(item: SchemasStoreUpdate, db: Session = Depends(dbs),
                       auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.store" % name])):
     """
@@ -196,9 +186,9 @@ async def store_model(item: SchemasStoreUpdate, db: Session = Depends(dbs),
     return Schemas(data=SchemasResponse(**bool_model.to_dict()))
 
 
-@router.put("/{}/{{pk}}".format(name), name="update {}".format(name), tags=tags)
-async def update_model(pk: int, item: SchemasStoreUpdate, db: Session = Depends(dbs),
-                       auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.update" % name])):
+@router.put("/{}/{{pk}}".format(name), name="update {}".format(name))
+async def update_put_model(pk: int, item: SchemasStoreUpdate, db: Session = Depends(dbs),
+                           auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.update" % name])):
     """
     :param pk:
     :param item:
@@ -208,15 +198,30 @@ async def update_model(pk: int, item: SchemasStoreUpdate, db: Session = Depends(
     """
     db_model = CRUD.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="{} not found".format(name.capitalize()))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(name.capitalize()))
     bool_model = CRUD.update(db=db, pk=pk, item=item)
     return Schemas(data=SchemasResponse(**bool_model.to_dict()))
 
 
-@router.delete("/{}/{{pk}}".format(name), name="delete {}".format(name), tags=tags)
-async def delete_model(pk: int, db: Session = Depends(dbs),
-                       auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.delete" % name])):
+@router.patch("/{}/{{pk}}".format(name), name="update {}".format(name))
+async def update_patch_model(pk: int, item: SchemasStoreUpdate, db: Session = Depends(dbs),
+                             auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.update" % name])):
+    """
+    :param pk:
+    :param item:
+    :param db:
+    :param auth:
+    :return:
+    """
+    db_model = CRUD.first(db=db, pk=pk)
+    if db_model is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(name.capitalize()))
+    bool_model = CRUD.update(db=db, pk=pk, item=item, exclude_unset=True)
+    return Schemas(data=SchemasResponse(**bool_model.to_dict()))
+
+
+@router.delete("/{}/{{pk}}".format(name), name="delete {}".format(name))
+async def delete_model(pk: int, db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.delete" % name])):
     """
     :param pk:
     :param db:
@@ -227,9 +232,8 @@ async def delete_model(pk: int, db: Session = Depends(dbs),
     return Schemas(data=bool_model)
 
 
-@router.delete("/{}".format(name), name="deletes {}".format(name), tags=tags)
-async def delete_models(pks: List[int], db: Session = Depends(dbs),
-                        auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.delete" % name])):
+@router.delete("/{}".format(name), name="deletes {}".format(name))
+async def delete_role_models(pks: List[int], db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.delete" % name])):
     """
     :param pks:
     :param db:
@@ -238,10 +242,8 @@ async def delete_models(pks: List[int], db: Session = Depends(dbs),
     """
     bool_model = CRUD.delete(db=db, pks=pks)
     return Schemas(data=bool_model)
-
 ```
-
-_5、在根目录下新建文件 **`config.py`**_ 
+_7、在根目录下新建文件 **`config.py`**_ 
 ```python
 # API 接口返回数据
 SCHEMAS_SUCCESS_CODE = 0
@@ -251,11 +253,19 @@ SCHEMAS_ERROR_CODE = 1
 SCHEMAS_ERROR_STATUS = 'error'
 SCHEMAS_ERROR_MESSAGE = '数据请求失败！'
 
+# 站点
+HOST_URL = ""
+
+# 上传目录
+UPLOAD_NAME = "static"
+UPLOAD_DIR = "static"
+UPLOAD_URI = "/static"
+
 # OAuth 授权相关
 OAUTH_DEFAULT_TAGS = ['OAuth']
 OAUTH_LOGIN_SCOPES = "login"
 
-OAUTH_TOKEN_URL = "/token"
+OAUTH_TOKEN_URL = "/api/token"
 OAUTH_TOKEN_SCOPES = {
     OAUTH_LOGIN_SCOPES: OAUTH_LOGIN_SCOPES.capitalize()
 }
@@ -296,10 +306,9 @@ DB_SESSION_MAKER_KWARGS = {
     "autocommit": False,
     "expire_on_commit": True
 }
-
 ```
 
-_6、在根目录下新建文件 **`.gitignore`**_ 
+_8、在根目录下新建文件 **`.gitignore`**_ 
 ```gitignore
 .idea
 Desktop.ini
@@ -313,9 +322,9 @@ db.sqlite3
 _1、在根目录下新建文件 **`Dockerfile`**_ 
 ```Dockerfile
 FROM python:3.8
-RUN mkdir -p /app && pip install uvicorn fastapi sqlalchemy sqlalchemy_mptt python-multipart hashids passlib python-jose bcrypt websockets
-EXPOSE 80
 WORKDIR /app
+EXPOSE 80
+RUN mkdir -p /app && pip install lsshu-cms
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--reload"]
 ```
 _2、创建镜像并运行_ 
@@ -340,6 +349,13 @@ http {
         server_name project.com;
         index index.html index.htm;
         root /projects/project_path/dist;
+        
+        try_files $uri $uri/ /index.html;
+        
+        location /static/ {
+          alias /www/wwwroot/vehicle.zhilhu.com/static/; #静态资源路径
+        }
+        
         location  ~/api|/docs|/openapi.json
         {
           proxy_pass  http://project_server;

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app import router
+from lsshu.oauth.main import router as router_oauth
 
 app = FastAPI(
     title='Base API Docs',
@@ -14,7 +14,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(router)
+app.include_router(router_oauth, prefix="/api")
 if __name__ == '__main__':
     import uvicorn
 

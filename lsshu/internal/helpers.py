@@ -83,7 +83,7 @@ def store_permissions(permissions: list):
     :param permissions:
     :return:
     """
-    from . import SYSTEM_PERMISSIONS
+    from lsshu.oauth.model import SYSTEM_PERMISSIONS
     # 检查系统权限
     checkPermissionOrStore(SYSTEM_PERMISSIONS)
     # 检查其它权限
@@ -98,7 +98,8 @@ def checkPermissionOrStore(permissions: list, db=None, parent_pk: int = None):
     :param parent_pk:
     :return:
     """
-    from . import CRUDOAuthPermission, SchemasOAuthPermissionStoreUpdate
+    from lsshu.oauth.permission.crud import CRUDOAuthPermission
+    from lsshu.oauth.permission.schema import SchemasOAuthPermissionStoreUpdate
     ACTION_ITEMS = [
         {"name": "列表", "scope": "list"},
         {"name": "详情", "scope": "get"},
@@ -107,7 +108,7 @@ def checkPermissionOrStore(permissions: list, db=None, parent_pk: int = None):
         {"name": "删除", "scope": "delete"},
     ]
     if not db:
-        from lsshu.db import SessionLocal
+        from lsshu.internal.db import SessionLocal
         db = SessionLocal()
     for permission in permissions:
         _scope = permission.get('scope')
@@ -142,8 +143,8 @@ def init_user_and_password(users: dict):
     :param users: {username:password}
     :return:
     """
-    from . import CRUDOAuthUser, SchemasOAuthUserStoreUpdate
-    from lsshu.db import SessionLocal
+    from lsshu.oauth.user.crud import CRUDOAuthUser, SchemasOAuthUserStoreUpdate
+    from lsshu.internal.db import SessionLocal
     db = SessionLocal()
     return [CRUDOAuthUser.update_or_store_model(db=db, where=('username', username), item=SchemasOAuthUserStoreUpdate(username=username, password=password))
             for username, password in users.items()]
