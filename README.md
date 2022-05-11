@@ -353,7 +353,7 @@ http {
         try_files $uri $uri/ /index.html;
         
         location /static/ {
-          alias /www/wwwroot/vehicle.zhilhu.com/static/; #静态资源路径
+          alias /projects/project_path/static/; #静态资源路径
         }
         
         location  ~/api|/docs|/openapi.json

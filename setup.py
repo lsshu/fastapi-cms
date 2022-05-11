@@ -2,7 +2,7 @@
 @Time    ：2022/5/10 10:55
 @Author  ：Lsshu
 @File    ：setup.py
-@Version ：2.0.0
+@Version ：2.0.1
 @Project ：lsshu-cms
 """
 from setuptools import setup, find_packages
@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-setup(name="lsshu-cms", version="2.0.0", description="FastAPI 开发的CMS", python_requires=">=3.8",
+setup(name="lsshu-cms", version="2.0.1", description="FastAPI 开发的CMS", python_requires=">=3.8",
       author="Lsshu", author_email="admin@lsshu.cn", url="https://github.com/lsshu/fastapi-cms",
       packages=find_packages(), long_description=long_description,
       long_description_content_type="text/markdown", license="GPLv3",
@@ -19,5 +19,5 @@ setup(name="lsshu-cms", version="2.0.0", description="FastAPI 开发的CMS", pyt
           "License :: OSI Approved :: MIT License",
           "Development Status :: 3 - Alpha",
       ],
-      install_requires=["uvicorn", "fastapi", "sqlalchemy", "sqlalchemy_mptt", "python-multipart", "hashids", "passlib", "python-jose", "bcrypt", "websockets"]
+      install_requires=["uvicorn[standard]", "fastapi", "sqlalchemy", "sqlalchemy_mptt", "python-multipart", "hashids", "passlib[bcrypt]", "python-jose[cryptography]"]
       )
