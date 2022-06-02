@@ -143,6 +143,19 @@ async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Dep
     return Schemas(data=SchemasPaginateItem(**db_model_list))
 
 
+@router.post('/{}.post'.format(name), name="get {}".format(name))
+async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
+                     auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.list" % name])):
+    """
+    :param db:
+    :param params:
+    :param auth:
+    :return:
+    """
+    db_model_list = CRUD.paginate(db=db, screen_params=params)
+    return Schemas(data=SchemasPaginateItem(**db_model_list))
+
+
 @router.get('/{}.params'.format(name), name="get {}".format(name))
 async def params_models(db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.list" % name])):
     """
