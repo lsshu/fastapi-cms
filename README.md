@@ -118,7 +118,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Security
 from sqlalchemy.orm import Session
 
 from lsshu.internal.db import dbs
-from lsshu.internal.depends import model_screen_params, auth_user
+from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
 from lsshu.internal.schema import ModelScreenParams, Schemas
 from lsshu.oauth.user.schema import SchemasOAuthScopes
 
