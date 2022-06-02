@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from config import OAUTH_DEFAULT_TAGS
 from lsshu.internal.db import dbs
-from lsshu.internal.depends import model_screen_params, auth_user
+from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
 from lsshu.internal.schema import ModelScreenParams, Schemas
 from lsshu.oauth.model import role_name
 from lsshu.oauth.permission.crud import CRUDOAuthPermission
@@ -20,6 +20,19 @@ role_scopes = [role_name, ]
 
 @router.get('/{}'.format(role_name), name="get {}".format(role_name))
 async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_screen_params),
+                     auth: SchemasOAuthScopes = Security(auth_user, scopes=role_scopes + ["%s.list" % role_name])):
+    """
+    :param db:
+    :param params:
+    :param auth:
+    :return:
+    """
+    db_model_list = CRUDOAuthRole.paginate(db=db, screen_params=params)
+    return Schemas(data=SchemasOAuthRolePaginateItem(**db_model_list))
+
+
+@router.post('/{}.post'.format(role_name), name="get {}".format(role_name))
+async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
                      auth: SchemasOAuthScopes = Security(auth_user, scopes=role_scopes + ["%s.list" % role_name])):
     """
     :param db:

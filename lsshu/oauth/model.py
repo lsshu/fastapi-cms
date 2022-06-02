@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from lsshu.internal.method import plural
 from lsshu.internal.model import Model, Engine, _ModelOAuthUsers, _ModelOAuthRoles, _ModelOAuthPermissions
 
-_name = __name__.capitalize()
+_name = "oauth".capitalize()
 _table_name = _name.replace('.', '_')
 user_name = plural("%s.user" % _name)
 role_name = plural("%s.role" % _name)
@@ -16,11 +16,14 @@ role_table_name = role_name.replace('.', '_')
 
 SYSTEM_PERMISSIONS = [
     {
-        "name": "后台管理", "scope": _name, "children": [
-        {"name": "授权用户", "scope": user_name},
-        {"name": "用户角色", "scope": role_name},
-        {"name": "权限管理", "scope": permission_name, "action": [{"name": "菜单", "scope": "menus"}, {"name": "树", "scope": "tree"}]}
-    ]
+        "name": "后台管理",
+        "scope": _name,
+        "icon": "ElementPlus",
+        "children": [
+            {"name": "授权用户", "scope": user_name, "icon": "User"},
+            {"name": "用户角色", "scope": role_name, "icon": "Money"},
+            {"name": "权限管理", "scope": permission_name, "icon": "KnifeFork", "action": [{"name": "菜单", "scope": "menus"}, {"name": "树", "scope": "tree"}]}
+        ]
     }
 ]
 

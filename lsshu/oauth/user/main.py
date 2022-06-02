@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, Security, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from config import OAUTH_OAUTH_ROUTER, OAUTH_DEFAULT_TAGS, OAUTH_ACCESS_TOKEN_EXPIRE_MINUTES, OAUTH_LOGIN_SCOPES, OAUTH_ADMIN_USERS, OAUTH_SECRET_KEY, OAUTH_ALGORITHM
+from config import OAUTH_OAUTH_ROUTER, OAUTH_DEFAULT_TAGS, OAUTH_ACCESS_TOKEN_EXPIRE_MINUTES, OAUTH_LOGIN_SCOPES, OAUTH_ADMIN_USERS, OAUTH_SECRET_KEY, OAUTH_ALGORITHM, \
+    OAUTH_TOKEN_PATH, OAUTH_SCOPES_PATH
 from lsshu.internal.db import dbs
-from lsshu.internal.depends import model_screen_params, auth_user
+from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
 from lsshu.internal.helpers import token_access_token, token_verify_password
 from lsshu.internal.schema import Schemas, ModelScreenParams
 from lsshu.oauth.model import user_name
@@ -70,7 +71,7 @@ def token_authenticate_access_token(db, username: str, password: str, scopes: li
     )
 
 
-@router.post('/token')
+@router.post(OAUTH_TOKEN_PATH)
 async def login_for_access_token(db: Session = Depends(dbs), form_data: OAuth2PasswordRequestForm = Depends()):
     """
     获取登录授权:
@@ -85,22 +86,37 @@ async def login_for_access_token(db: Session = Depends(dbs), form_data: OAuth2Pa
     return SchemasLoginResponse(data=SchemasLogin(access_token=access_token, token_type="bearer"))
 
 
-@router.get('/me')
-async def get_login_access_me(auth: SchemasOAuthScopes = Security(auth_user)):
+@router.get(OAUTH_SCOPES_PATH)
+async def get_scopes(auth: SchemasOAuthScopes = Security(auth_user)):
     """
     获取登录授权:
     """
-    return SchemasOAuthUserMeStatusResponse(data=auth.user, scopes=auth.scopes)
+    return SchemasOAuthUserMeStatusResponse(data={"user": auth.user, "scopes": auth.scopes})
 
 
 @router.get('/{}'.format(user_name), name="get {}".format(user_name))
 async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_screen_params),
                      auth: SchemasOAuthScopes = Security(auth_user, scopes=user_scopes + ["%s.list" % user_name])):
     """
-    :param db:
-    :param params:
-    :param auth:
-    :return:
+    获取授权用户列表
+    - **:param db**:
+    - **:param params**:
+    - **:param auth**:
+    - **:return**:
+    """
+    db_model_list = CRUDOAuthUser.paginate(db=db, screen_params=params)
+    return Schemas(data=SchemasPaginateItem(**db_model_list))
+
+
+@router.post('/{}.post'.format(user_name), name="get {}".format(user_name))
+async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
+                     auth: SchemasOAuthScopes = Security(auth_user, scopes=user_scopes + ["%s.list" % user_name])):
+    """
+    获取授权用户列表
+    - **:param db**:
+    - **:param params**:
+    - **:param auth**:
+    - **:return**:
     """
     db_model_list = CRUDOAuthUser.paginate(db=db, screen_params=params)
     return Schemas(data=SchemasPaginateItem(**db_model_list))

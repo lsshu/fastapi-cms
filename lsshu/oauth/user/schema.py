@@ -37,10 +37,24 @@ class SchemasLoginResponse(Schemas):
     data = SchemasLogin
 
 
+class SchemasOAuthUserBriefly(BaseModel):
+    """授权用户简要 返回"""
+    username: Optional[str] = None
+    available: Optional[bool] = True
+
+    class Config:
+        orm_mode = True
+
+
+class SchemasOAuthUserAndScopes(BaseModel):
+    """获取授权返回"""
+    user: Optional[SchemasOAuthUserBriefly] = None
+    scopes: Optional[list] = None
+
+
 class SchemasOAuthUserMeStatusResponse(Schemas):
     """登录授权用户 状态返回"""
-    data: SchemasOAuthUserResponse
-    scopes: Optional[list] = None
+    data: SchemasOAuthUserAndScopes
 
 
 class SchemasOAuthUserStoreUpdate(BaseModel):
@@ -50,7 +64,6 @@ class SchemasOAuthUserStoreUpdate(BaseModel):
     available: Optional[bool] = True
     permissions: Optional[List[int]] = None
     roles: Optional[List[int]] = None
-    stores: Optional[List[int]] = None
 
 
 class SchemasOAuthUser(BaseModel):

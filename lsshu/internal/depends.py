@@ -1,4 +1,5 @@
-from typing import Optional, Union
+import json
+from typing import Optional
 
 from fastapi import Depends, Security
 from fastapi.security import SecurityScopes, OAuth2PasswordBearer
@@ -12,9 +13,24 @@ from lsshu.oauth.user.crud import CRUDOAuthUser
 from lsshu.oauth.user.schema import SchemasOAuthUser, SchemasOAuthScopes
 
 
-def model_screen_params(page: Optional[int] = 1, limit: Optional[int] = 25, where: Optional[Union[dict, list]] = None):
+def model_screen_params(page: Optional[int] = 1, limit: Optional[int] = 25, quest_data: Optional[str] = None):
     """列表筛选参数"""
-    return ModelScreenParams(page=page, limit=limit, where=where)
+    order, where = [], []
+    if bool(quest_data):
+        quest_data = json.loads(quest_data) if quest_data else None
+        [order.extend(list(s.items())) for s in quest_data['sort']] if 'sort' in quest_data else None
+        where = [(w['key'], w['condition'], w['value']) for w in quest_data['where']] if 'where' in quest_data else None
+    return ModelScreenParams(page=page, limit=limit, order=order, where=where)
+
+
+def model_post_screen_params(data: ModelScreenParams = None):
+    """列表筛选参数"""
+    order = []
+    [order.extend(list(s.items())) for s in data.order]
+    data.order = order
+    where = [(w['key'], w['condition'], w['value']) for w in data.where]
+    data.where = where
+    return data
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=OAUTH_TOKEN_URL, scopes=OAUTH_TOKEN_SCOPES)

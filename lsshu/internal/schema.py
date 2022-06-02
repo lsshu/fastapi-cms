@@ -29,5 +29,6 @@ class SchemasPaginate(BaseModel):
 class ModelScreenParams(BaseModel):
     """获取列表默认参数"""
     page: Optional[int] = 1
-    limit: Optional[int] = 15
+    limit: Optional[int] = 25
     where: Optional[Union[dict, list]] = None
+    order: Optional[list] = None

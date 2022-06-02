@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from config import OAUTH_DEFAULT_TAGS
 from lsshu.internal.db import dbs
-from lsshu.internal.depends import model_screen_params, auth_user
+from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
 from lsshu.internal.schema import ModelScreenParams, Schemas
 from lsshu.oauth.model import permission_name
 from lsshu.oauth.permission.crud import CRUDOAuthPermission
@@ -20,6 +20,19 @@ permission_scopes = [permission_name, ]
 
 @router.get('/{}'.format(permission_name), name="get {}".format(permission_name))
 async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_screen_params),
+                     auth: SchemasOAuthScopes = Security(auth_user, scopes=permission_scopes + ["%s.list" % permission_name])):
+    """
+    :param db:
+    :param params:
+    :param auth:
+    :return:
+    """
+    db_model_list = CRUDOAuthPermission.paginate(db=db, screen_params=params)
+    return Schemas(data=SchemasOAuthPermissionPaginateItem(**db_model_list))
+
+
+@router.post('/{}.post'.format(permission_name), name="get {}".format(permission_name))
+async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
                      auth: SchemasOAuthScopes = Security(auth_user, scopes=permission_scopes + ["%s.list" % permission_name])):
     """
     :param db:
@@ -65,8 +78,7 @@ async def menus_permission_models(db: Session = Depends(dbs), auth: SchemasOAuth
     """
 
     def query_fun(nodes):
-        return nodes.filter(getattr(CRUDOAuthPermission.params_model, CRUDOAuthPermission.params_delete_tag).is_(None)).filter(
-            getattr(CRUDOAuthPermission.params_model, 'is_menu').is_(True)).filter(getattr(CRUDOAuthPermission.params_model, 'scope').in_(auth.scopes))
+        return nodes.filter(getattr(CRUDOAuthPermission.params_model, 'is_menu').is_(True)).filter(getattr(CRUDOAuthPermission.params_model, 'scope').in_(auth.scopes))
 
     db_model_list = CRUDOAuthPermission.get_tree(db=db, json=True, query=query_fun)
     return SchemasOAuthPermissionTreeStatusResponse(data=db_model_list)

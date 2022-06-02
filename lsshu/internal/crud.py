@@ -9,7 +9,6 @@ from lsshu.internal.db import Model
 
 class BaseCRUD(object):
     params_pk = "id"
-    params_delete_tag = "deleted_at"  # 伪删除 字段
     params_model = Model  # 操作模型
     params_db = Session  # db实例
     params_query = None  # 查询实例
@@ -94,28 +93,6 @@ class BaseCRUD(object):
         :return:
         """
         data = cls.action_params(**kwargs).action().params_query.all()
-        return data
-
-    @classmethod
-    def removed(cls, **kwargs):
-        """
-        伪删除数据
-        :param kwargs:
-        :return:
-        """
-        data = cls.choose_pseudo_deletion(False).where(cls.params_delete_tag, 'is_not', None).action_params(
-            **kwargs).action().params_query.all()
-        return data
-
-    @classmethod
-    def recovery(cls, **kwargs):
-        """
-        恢复 伪删除数据
-        :param kwargs:
-        :return:
-        """
-        data = cls.choose_pseudo_deletion(False).where(cls.params_delete_tag, 'is_not', None).action_params(
-            **kwargs).action().params_query.update({cls.params_delete_tag: None})
         return data
 
     @classmethod
@@ -282,14 +259,15 @@ class BaseCRUD(object):
         :param where:
         :return:
         """
-        _where = cls.params.get('where', [])
-        if (type(where) == list or type(where) == tuple) and (type(where[0]) == list or type(where[0]) == tuple):
-            _where.extend(where)
-        elif (type(where) == list or type(where) == tuple) and type(where[0]) == str:
-            _where.append(where)
-        elif type(where) == str:
-            _where.append((where, *args))
-        cls.params.update({"where": _where})
+        if bool(where):
+            _where = cls.params.get('where', [])
+            if (type(where) == list or type(where) == tuple) and (type(where[0]) == list or type(where[0]) == tuple):
+                _where.extend(where)
+            elif (type(where) == list or type(where) == tuple) and type(where[0]) == str:
+                _where.append(where)
+            elif type(where) == str:
+                _where.append((where, *args))
+            cls.params.update({"where": _where})
         return cls
 
     @classmethod
@@ -365,6 +343,8 @@ class BaseCRUD(object):
                                     fil in
                                     where[2]]
                         query = query.filter(or_(*_filters))
+                elif where[1] in ["between"] and type(where[2]) in [list, tuple] and len(where[2]) == 2:
+                    query = query.filter(getattr(getattr(cls.params_model, where[0]), where[1])(where[2][0], where[2][1]))
                 else:
                     query = query.filter(getattr(getattr(cls.params_model, where[0]), where[1])(where[2]))
         cls.params_query = query
@@ -377,12 +357,13 @@ class BaseCRUD(object):
         :param order:
         :return:
         """
-        _order = cls.params.get('order', [])
-        if type(order[0]) == list or type(order[0]) == tuple:
-            _order.extend(order)
-        elif type(order[0]) == str:
-            _order.append(order)
-        cls.params.update({"order": _order})
+        if bool(order):
+            _order = cls.params.get('order', [])
+            if type(order[0]) == list or type(order[0]) == tuple:
+                _order.extend(order)
+            elif type(order[0]) == str:
+                _order.append(order)
+            cls.params.update({"order": _order})
         return cls
 
     @classmethod
@@ -394,7 +375,7 @@ class BaseCRUD(object):
         query = cls.params_query
         orders = cls.params.get('order', [])
         if bool(orders):
-            if orders and (type(orders) == tuple or type(orders) == list):  # 设置过滤 like
+            if orders and (type(orders) == tuple or type(orders) == list):  # 设置排序
                 for attr_item in orders:
                     query = query.order_by(getattr(getattr(cls.params_model, attr_item[0]), attr_item[1])())
         cls.params_query = query
@@ -557,12 +538,11 @@ class CRUDTree(BaseCRUD):
         """
 
         def query_fun(nodes):
-            return nodes.filter(getattr(cls.params_model, cls.params_delete_tag).is_(None))
+            return nodes
 
         def json_fields_fun(node):
             import copy
             _node = copy.deepcopy(node)
-            delattr(_node, cls.params_delete_tag)
             return {"id": _node.id, "label": _node.name, "node": _node}
 
         return cls.params_model.get_tree(session=db, json=json, json_fields=json_fields_fun if json is True and not json_fields else json_fields,

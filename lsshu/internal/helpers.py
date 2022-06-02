@@ -117,9 +117,10 @@ def checkPermissionOrStore(permissions: list, db=None, parent_pk: int = None):
         _children = permission.get('children', None)
         _is_menu = permission.get('is_menu', True)
         _is_action = permission.get('is_action', True)
+        icon = permission.get('icon', None)
         parent = CRUDOAuthPermission.find_or_store_model(
             db=db, where=('scope', _scope), item=SchemasOAuthPermissionStoreUpdate(
-                name=_name, scope=_scope, parent_id=parent_pk, is_menu=_is_menu, is_action=_is_action
+                name=_name, scope=_scope, parent_id=parent_pk, is_menu=_is_menu, is_action=_is_action, icon=icon
             )
         )
         if _children:

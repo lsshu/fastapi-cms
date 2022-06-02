@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Security
 from sqlalchemy.orm import Session
 
 from lsshu.internal.db import dbs
-from lsshu.internal.depends import model_screen_params, auth_user
+from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
 from lsshu.internal.schema import ModelScreenParams, Schemas
 from lsshu.oauth.user.schema import SchemasOAuthScopes
 
@@ -18,6 +18,19 @@ scopes = [name, ]
 
 @router.get('/{}'.format(name), name="get {}".format(name))
 async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_screen_params),
+                     auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.list" % name])):
+    """
+    :param db:
+    :param params:
+    :param auth:
+    :return:
+    """
+    db_model_list = CRUD.paginate(db=db, screen_params=params)
+    return Schemas(data=SchemasPaginateItem(**db_model_list))
+
+
+@router.post('/{}.post'.format(name), name="get {}".format(name))
+async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
                      auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.list" % name])):
     """
     :param db:
