@@ -21,8 +21,8 @@ UPLOAD_URI: str = "/static"
 OAUTH_DEFAULT_TAGS: list = ['OAuth']
 OAUTH_LOGIN_SCOPES: str = "login"
 
-OAUTH_TOKEN: str = "/token"
-OAUTH_TOKEN_URL: str = "/api%s" % OAUTH_TOKEN
+OAUTH_TOKEN_URI: str = "/token"
+OAUTH_TOKEN_URL: str = "/api%s" % OAUTH_TOKEN_URI
 OAUTH_SCOPES_URI: str = "/scopes"
 OAUTH_TOKEN_SCOPES: dict = {
     OAUTH_LOGIN_SCOPES: OAUTH_LOGIN_SCOPES.capitalize()

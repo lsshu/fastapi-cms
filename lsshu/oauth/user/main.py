@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from config import OAUTH_OAUTH_ROUTER, OAUTH_DEFAULT_TAGS, OAUTH_ACCESS_TOKEN_EXPIRE_MINUTES, OAUTH_LOGIN_SCOPES, OAUTH_ADMIN_USERS, OAUTH_SECRET_KEY, OAUTH_ALGORITHM, \
-    OAUTH_TOKEN_PATH, OAUTH_SCOPES_PATH
+    OAUTH_TOKEN_URI, OAUTH_SCOPES_URI
 from lsshu.internal.db import dbs
 from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
 from lsshu.internal.helpers import token_access_token, token_verify_password
@@ -71,7 +71,7 @@ def token_authenticate_access_token(db, username: str, password: str, scopes: li
     )
 
 
-@router.post(OAUTH_TOKEN_PATH)
+@router.post(OAUTH_TOKEN_URI)
 async def login_for_access_token(db: Session = Depends(dbs), form_data: OAuth2PasswordRequestForm = Depends()):
     """
     获取登录授权:
@@ -86,7 +86,7 @@ async def login_for_access_token(db: Session = Depends(dbs), form_data: OAuth2Pa
     return SchemasLoginResponse(data=SchemasLogin(access_token=access_token, token_type="bearer"))
 
 
-@router.get(OAUTH_SCOPES_PATH)
+@router.get(OAUTH_SCOPES_URI)
 async def get_scopes(auth: SchemasOAuthScopes = Security(auth_user)):
     """
     获取登录授权:
