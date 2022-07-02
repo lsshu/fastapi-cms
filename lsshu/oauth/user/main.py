@@ -108,9 +108,9 @@ async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Dep
     return Schemas(data=SchemasPaginateItem(**db_model_list))
 
 
-@router.post('/{}.post'.format(user_name), name="get {}".format(user_name))
-async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
-                     auth: SchemasOAuthScopes = Security(auth_user, scopes=user_scopes + ["%s.list" % user_name])):
+@router.post('/{}.post'.format(user_name), name="post {}".format(user_name))
+async def post_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
+                      auth: SchemasOAuthScopes = Security(auth_user, scopes=user_scopes + ["%s.list" % user_name])):
     """
     获取授权用户列表
     - **:param db**:

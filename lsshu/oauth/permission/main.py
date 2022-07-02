@@ -10,7 +10,7 @@ from lsshu.internal.schema import ModelScreenParams, Schemas
 from lsshu.oauth.model import permission_name
 from lsshu.oauth.permission.crud import CRUDOAuthPermission
 from lsshu.oauth.permission.schema import SchemasOAuthPermissionPaginateItem, SchemasOAuthPermissionTreeStatusResponse, SchemasOAuthPermissionResponse, \
-    SchemasOAuthPermissionStoreUpdate
+    SchemasOAuthPermissionStoreUpdate, SchemasOAuthPermissionMenuStatusResponse
 from lsshu.oauth.user.schema import SchemasOAuthScopes
 
 tags = OAUTH_DEFAULT_TAGS + ['Permission']
@@ -31,9 +31,9 @@ async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Dep
     return Schemas(data=SchemasOAuthPermissionPaginateItem(**db_model_list))
 
 
-@router.post('/{}.post'.format(permission_name), name="get {}".format(permission_name))
-async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
-                     auth: SchemasOAuthScopes = Security(auth_user, scopes=permission_scopes + ["%s.list" % permission_name])):
+@router.post('/{}.post'.format(permission_name), name="post {}".format(permission_name))
+async def post_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
+                      auth: SchemasOAuthScopes = Security(auth_user, scopes=permission_scopes + ["%s.list" % permission_name])):
     """
     :param db:
     :param params:
@@ -69,6 +69,21 @@ async def tree_models(db: Session = Depends(dbs), auth: SchemasOAuthScopes = Sec
     return SchemasOAuthPermissionTreeStatusResponse(data=db_model_list)
 
 
+@router.post('/{}.tree.post'.format(permission_name), name="post {}".format(permission_name))
+async def tree_models(db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user, scopes=permission_scopes + ["%s.list" % permission_name])):
+    """
+    :param db:
+    :param auth:
+    :return:
+    """
+
+    def json_fields(node):
+        return node.to_dict()
+
+    db_model_list = CRUDOAuthPermission.get_tree(db=db, json=True, json_fields=json_fields)
+    return SchemasOAuthPermissionTreeStatusResponse(data=db_model_list)
+
+
 @router.get('/{}.menus'.format(permission_name), name="get {}".format(permission_name))
 async def menus_permission_models(db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user)):
     """
@@ -80,8 +95,29 @@ async def menus_permission_models(db: Session = Depends(dbs), auth: SchemasOAuth
     def query_fun(nodes):
         return nodes.filter(getattr(CRUDOAuthPermission.params_model, 'is_menu').is_(True)).filter(getattr(CRUDOAuthPermission.params_model, 'scope').in_(auth.scopes))
 
-    db_model_list = CRUDOAuthPermission.get_tree(db=db, json=True, query=query_fun)
-    return SchemasOAuthPermissionTreeStatusResponse(data=db_model_list)
+    def json_fields(node):
+        return node.to_dict()
+
+    db_model_list = CRUDOAuthPermission.get_tree(db=db, json=True, json_fields=json_fields, query=query_fun)
+    return SchemasOAuthPermissionMenuStatusResponse(data=db_model_list)
+
+
+@router.post('/{}.menus.post'.format(permission_name), name="post {}".format(permission_name))
+async def menus_permission_models(db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user)):
+    """
+    :param db:
+    :param auth:
+    :return:
+    """
+
+    def query_fun(nodes):
+        return nodes.filter(getattr(CRUDOAuthPermission.params_model, 'is_menu').is_(True)).filter(getattr(CRUDOAuthPermission.params_model, 'scope').in_(auth.scopes))
+
+    def json_fields(node):
+        return node.to_dict()
+
+    db_model_list = CRUDOAuthPermission.get_tree(db=db, json=True, json_fields=json_fields, query=query_fun)
+    return SchemasOAuthPermissionMenuStatusResponse(data=db_model_list)
 
 
 @router.get('/{}/{{pk}}'.format(permission_name), name="get {}".format(permission_name))

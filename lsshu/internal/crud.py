@@ -96,6 +96,16 @@ class BaseCRUD(object):
         return data
 
     @classmethod
+    def count(cls, **kwargs) -> int:
+        """
+        多数据
+        :param kwargs:
+        :return:
+        """
+        data = cls.action_params(**kwargs).action().params_query.count()
+        return data
+
+    @classmethod
     def first(cls, **kwargs):
         """
         单条数据
@@ -123,14 +133,14 @@ class BaseCRUD(object):
         next_num = page + 1 if pages > page else None
         prev_num = page - 1 if page > 1 else None
         return {
-            "has_next": bool(next_num),  # 如果下一页存在，返回True
-            "has_prev": bool(prev_num),  # 如果上一页存在，返回True
+            # "has_next": bool(next_num),  # 如果下一页存在，返回True
+            # "has_prev": bool(prev_num),  # 如果上一页存在，返回True
             "items": items,  # 当前页的数据列表
-            "next_num": next_num,  # 下一页的页码
-            "prev_num": prev_num,  # 上一页的页码
-            "page": page,  # 当前页码
+            # "next_num": next_num,  # 下一页的页码
+            # "prev_num": prev_num,  # 上一页的页码
+            # "page": page,  # 当前页码
             "pages": pages,  # 总页数
-            "per_page": limit,  # 每页的条数
+            # "per_page": limit,  # 每页的条数
             "total": total,  # 总条数
         }
 

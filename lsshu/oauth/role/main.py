@@ -31,9 +31,9 @@ async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Dep
     return Schemas(data=SchemasOAuthRolePaginateItem(**db_model_list))
 
 
-@router.post('/{}.post'.format(role_name), name="get {}".format(role_name))
-async def get_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
-                     auth: SchemasOAuthScopes = Security(auth_user, scopes=role_scopes + ["%s.list" % role_name])):
+@router.post('/{}.post'.format(role_name), name="post {}".format(role_name))
+async def post_models(db: Session = Depends(dbs), params: ModelScreenParams = Depends(model_post_screen_params),
+                      auth: SchemasOAuthScopes = Security(auth_user, scopes=role_scopes + ["%s.list" % role_name])):
     """
     :param db:
     :param params:

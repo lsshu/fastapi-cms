@@ -15,7 +15,7 @@ class CRUDOAuthRole(CRUDTree):
     @classmethod
     def store(cls, db: Session, item: SchemasOAuthRoleStoreUpdate, **kwargs):
         if item.permissions:
-            from .. import BaseCRUD
+            from lsshu.internal.crud import BaseCRUD
             _relation = BaseCRUD.all(db=db, model=ModelOAuthPermissions, where=("id", 'in_', item.permissions))
             item.scopes = " ".join([relation.scope for relation in _relation])
         return super(CRUDOAuthRole, cls).store(db=db, item=item, **kwargs)
@@ -23,7 +23,7 @@ class CRUDOAuthRole(CRUDTree):
     @classmethod
     def update(cls, db: Session, pk: int, item: SchemasOAuthRoleStoreUpdate, **kwargs):
         if item.permissions:
-            from .. import BaseCRUD
+            from lsshu.internal.crud import BaseCRUD
             _relation = BaseCRUD.all(db=db, model=ModelOAuthPermissions, where=("id", 'in_', item.permissions))
             item.scopes = " ".join([relation.scope for relation in _relation])
         return super(CRUDOAuthRole, cls).update(db=db, pk=pk, item=item, **kwargs)
