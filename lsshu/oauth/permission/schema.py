@@ -40,7 +40,7 @@ class SchemasOAuthPermissionStoreUpdate(BaseModel):
 
 class SchemasOAuthPermissionTreeResponse(SchemasOAuthPermissionResponse):
     """权限 返回"""
-    children: Optional[List[SchemasOAuthPermissionResponse]] = None
+    children: Optional[list] = None
 
 
 class SchemasOAuthPermissionTreeStatusResponse(Schemas):

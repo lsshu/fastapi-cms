@@ -2,17 +2,19 @@ from sqlalchemy import Column, Integer, ForeignKey, Table, event
 from sqlalchemy.orm import relationship
 
 from lsshu.internal.method import plural
-from lsshu.internal.model import Model, Engine, _ModelOAuthUsers, _ModelOAuthRoles, _ModelOAuthPermissions
+from lsshu.internal.model import Model, Engine, _ModelOAuthUsers, _ModelOAuthRoles, _ModelOAuthPermissions, _ModelOAuthAnnexes
 
 _name = "oauth".capitalize()
 _table_name = _name.replace('.', '_')
 user_name = plural("%s.user" % _name)
 role_name = plural("%s.role" % _name)
 permission_name = plural("%s.permission" % _name)
+annex_name = plural("%s.annex" % _name)
 
 user_table_name = user_name.replace('.', '_')
 permission_table_name = permission_name.replace('.', '_')
 role_table_name = role_name.replace('.', '_')
+annex_table_name = annex_name.replace('.', '_')
 
 SYSTEM_PERMISSIONS = [
     {
@@ -22,7 +24,8 @@ SYSTEM_PERMISSIONS = [
         "children": [
             {"name": "授权用户", "scope": user_name, "icon": "User"},
             {"name": "用户角色", "scope": role_name, "icon": "Money"},
-            {"name": "权限管理", "scope": permission_name, "icon": "KnifeFork", "action": [{"name": "菜单", "scope": "menus"}, {"name": "树", "scope": "tree"}]}
+            {"name": "权限管理", "scope": permission_name, "icon": "KnifeFork", "action": [{"name": "菜单", "scope": "menus"}, {"name": "树", "scope": "tree"}]},
+            {"name": "附件文件", "scope": annex_name, "icon": "Folder"},
         ]
     }
 ]
@@ -69,3 +72,14 @@ def receive_before_insert(target, value: str, old_value, initiator):
 @event.listens_for(ModelOAuthPermissions.scope, 'modified')
 def receive_before_insert(target, initiator):
     target.path = "/%s" % target.scope.replace('.', '/').lower()
+
+
+class ModelOAuthAnnexes(_ModelOAuthAnnexes):
+    """ 附件 """
+    __tablename__ = annex_table_name
+
+    @property
+    def preview_path(self):
+        import os
+        from config import HOST_URL
+        return os.path.join(HOST_URL, self.path)

@@ -10,7 +10,7 @@ from lsshu.internal.schema import ModelScreenParams, Schemas
 from lsshu.oauth.model import permission_name
 from lsshu.oauth.permission.crud import CRUDOAuthPermission
 from lsshu.oauth.permission.schema import SchemasOAuthPermissionPaginateItem, SchemasOAuthPermissionTreeStatusResponse, SchemasOAuthPermissionResponse, \
-    SchemasOAuthPermissionStoreUpdate, SchemasOAuthPermissionMenuStatusResponse
+    SchemasOAuthPermissionStoreUpdate, SchemasOAuthPermissionMenuStatusResponse, SchemasOAuthPermissionTreeResponse
 from lsshu.oauth.user.schema import SchemasOAuthScopes
 
 tags = OAUTH_DEFAULT_TAGS + ['Permission']
@@ -81,7 +81,15 @@ async def tree_models(db: Session = Depends(dbs), auth: SchemasOAuthScopes = Sec
         return node.to_dict()
 
     db_model_list = CRUDOAuthPermission.get_tree(db=db, json=True, json_fields=json_fields)
-    return SchemasOAuthPermissionTreeStatusResponse(data=db_model_list)
+
+    def _response(model: dict):
+        children = model.get('children', None)
+        if children:
+            model['children'] = [_response(_model) for _model in children]
+        return SchemasOAuthPermissionTreeResponse(**model).dict()
+
+    db_list = [_response(db_model) for db_model in db_model_list]
+    return Schemas(data=db_list)
 
 
 @router.get('/{}.menus'.format(permission_name), name="get {}".format(permission_name))

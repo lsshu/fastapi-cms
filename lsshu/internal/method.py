@@ -79,14 +79,14 @@ def get_client_ip(request):
     return addr or None
 
 
-def md5_string(string):
+def md5_bytes(string: bytes):
     """
     md5 字符串
     :param string:
     :return:
     """
     import hashlib
-    md5hash = hashlib.md5(string.encode('utf8'))
+    md5hash = hashlib.md5(string)
     return md5hash.hexdigest()
 
 
@@ -142,3 +142,24 @@ def plural(word: str):
         return word[:-2] + "en"
     else:
         return word + "s"
+
+
+def write_file(path, content, mode="wb", **kwargs):
+    """
+    写入文件
+    :param path:
+    :param content:
+    :param mode:
+    :param kwargs:
+    :return:
+    """
+    import os
+    dir = os.path.dirname(path)
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    if not os.path.isdir(path):
+        with open(path, mode, **kwargs) as f:
+            f.write(content)
+        return True
+    else:
+        return False
