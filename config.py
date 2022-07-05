@@ -24,6 +24,7 @@ OAUTH_LOGIN_SCOPES: str = "login"
 OAUTH_TOKEN_URI: str = "/token"
 OAUTH_TOKEN_URL: str = "/api%s" % OAUTH_TOKEN_URI
 OAUTH_SCOPES_URI: str = "/scopes"
+OAUTH_ME_URI: str = "/me"
 OAUTH_TOKEN_SCOPES: dict = {
     OAUTH_LOGIN_SCOPES: OAUTH_LOGIN_SCOPES.capitalize()
 }

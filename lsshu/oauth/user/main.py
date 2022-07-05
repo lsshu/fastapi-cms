@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, Security, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from config import OAUTH_OAUTH_ROUTER, OAUTH_DEFAULT_TAGS, OAUTH_ACCESS_TOKEN_EXPIRE_MINUTES, OAUTH_LOGIN_SCOPES, OAUTH_ADMIN_USERS, OAUTH_SECRET_KEY, OAUTH_ALGORITHM, \
-    OAUTH_TOKEN_URI, OAUTH_SCOPES_URI
+from config import OAUTH_DEFAULT_TAGS, OAUTH_ACCESS_TOKEN_EXPIRE_MINUTES, OAUTH_LOGIN_SCOPES, OAUTH_ADMIN_USERS, OAUTH_SECRET_KEY, OAUTH_ALGORITHM, \
+    OAUTH_TOKEN_URI, OAUTH_SCOPES_URI, OAUTH_ME_URI
 from lsshu.internal.db import dbs
 from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
 from lsshu.internal.helpers import token_access_token, token_verify_password
@@ -15,7 +15,7 @@ from lsshu.oauth.permission.crud import CRUDOAuthPermission
 from lsshu.oauth.role.crud import CRUDOAuthRole
 from lsshu.oauth.user.crud import CRUDOAuthUser
 from lsshu.oauth.user.schema import SchemasOAuthScopes, SchemasLoginResponse, SchemasLogin, SchemasOAuthUserMeStatusResponse, SchemasPaginateItem, SchemasParams, \
-    SchemasOAuthUserResponse, SchemasOAuthUserStoreUpdate
+    SchemasOAuthUserResponse, SchemasOAuthUserStoreUpdate, SchemasOAuthUserMeUpdate
 
 tags = OAUTH_DEFAULT_TAGS + ['User']
 router = APIRouter(tags=tags)
@@ -92,6 +92,23 @@ async def get_scopes(auth: SchemasOAuthScopes = Security(auth_user)):
     获取登录授权:
     """
     return SchemasOAuthUserMeStatusResponse(data={"user": auth.user, "scopes": auth.scopes})
+
+
+@router.get(OAUTH_ME_URI)
+async def get_me(auth: SchemasOAuthScopes = Security(auth_user)):
+    """
+    获取登录授权的用户信息:
+    """
+    return Schemas(data=auth.user)
+
+
+@router.patch(OAUTH_ME_URI)
+async def patch_me(item: SchemasOAuthUserStoreUpdate, db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user)):
+    """
+    更新登录授权用户的信息:
+    """
+    bool_model = CRUDOAuthUser.update(db=db, pk=auth.user.id, item=item)
+    return Schemas(data=SchemasOAuthUserResponse(**bool_model.to_dict()))
 
 
 @router.get('/{}'.format(user_name), name="get {}".format(user_name))

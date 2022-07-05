@@ -14,7 +14,6 @@ class SchemasOAuthUserResponse(BaseModel):
     username: Optional[str] = None
     permissions: Optional[List[SchemasOAuthPermissionResponse]] = None
     roles: Optional[List[SchemasOAuthRoleResponse]] = None
-    stores: Optional[list] = None
     available: Optional[bool] = True
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -84,3 +83,9 @@ class SchemasParams(BaseModel):
     """参数"""
     roles: List[SchemasOAuthRoleResponse]
     permissions: List[SchemasOAuthPermissionResponse]
+
+
+class SchemasOAuthUserMeUpdate(BaseModel):
+    """授权用户修改自己信息 提交"""
+    username: Optional[str] = None
+    password: Optional[str] = None

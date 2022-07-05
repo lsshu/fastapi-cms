@@ -10,7 +10,7 @@ class Schemas(BaseModel):
     code: Optional[int] = SCHEMAS_SUCCESS_CODE
     status: Optional[str] = SCHEMAS_SUCCESS_STATUS
     message: Optional[str] = SCHEMAS_SUCCESS_MESSAGE
-    data: Optional[Union[BaseModel, dict, list, str, None]] = None
+    data: Optional[Union[BaseModel, dict, list, str, bool, None]] = None
 
 
 class SchemasPaginate(BaseModel):
