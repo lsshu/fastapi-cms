@@ -9,7 +9,7 @@ from config import OAUTH_DEFAULT_TAGS, OAUTH_ACCESS_TOKEN_EXPIRE_MINUTES, OAUTH_
 from lsshu.internal.db import dbs
 from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
 from lsshu.internal.helpers import token_access_token, token_verify_password
-from lsshu.internal.schema import Schemas, ModelScreenParams
+from lsshu.internal.schema import Schemas, SchemasError, ModelScreenParams
 from lsshu.oauth.model import user_name
 from lsshu.oauth.permission.crud import CRUDOAuthPermission
 from lsshu.oauth.role.crud import CRUDOAuthRole
@@ -165,7 +165,7 @@ async def get_model(pk: int, db: Session = Depends(dbs),
     """
     db_model = CRUDOAuthUser.first(db=db, where=(CRUDOAuthUser.params_pk, pk))
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(user_name.capitalize()))
+        return SchemasError(message="Data Not Found")
     return Schemas(data=SchemasOAuthUserResponse(**db_model.to_dict()))
 
 
@@ -179,8 +179,7 @@ async def store_model(item: SchemasOAuthUserStoreUpdate, db: Session = Depends(d
     """
     db_model = CRUDOAuthUser.first(db=db, where=("username", item.username))
     if db_model is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="{} already registered".format(user_name.capitalize()))
+        return SchemasError(message="Data Already Registered")
     bool_model = CRUDOAuthUser.store(db=db, item=item)
     return Schemas(data=SchemasOAuthUserResponse(**bool_model.to_dict()))
 
@@ -197,7 +196,7 @@ async def update_put_model(pk: int, item: SchemasOAuthUserStoreUpdate, db: Sessi
     """
     db_model = CRUDOAuthUser.first(db=db, where=(CRUDOAuthUser.pk, pk))
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(user_name.capitalize()))
+        return SchemasError(message="Data Not Found")
     bool_model = CRUDOAuthUser.update(db=db, pk=pk, item=item)
     return Schemas(data=SchemasOAuthUserResponse(**bool_model.to_dict()))
 
@@ -214,7 +213,7 @@ async def update_patch_model(pk: int, item: SchemasOAuthUserStoreUpdate, db: Ses
     """
     db_model = CRUDOAuthUser.first(db=db, where=(CRUDOAuthUser.pk, pk))
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(user_name.capitalize()))
+        return SchemasError(message="Data Not Found")
     bool_model = CRUDOAuthUser.update(db=db, pk=pk, item=item, exclude_unset=True)
     return Schemas(data=SchemasOAuthUserResponse(**bool_model.to_dict()))
 

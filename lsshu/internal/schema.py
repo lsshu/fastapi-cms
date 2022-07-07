@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 from pydantic import BaseModel
 
-from config import SCHEMAS_SUCCESS_CODE, SCHEMAS_SUCCESS_STATUS, SCHEMAS_SUCCESS_MESSAGE
+from config import SCHEMAS_SUCCESS_CODE, SCHEMAS_SUCCESS_STATUS, SCHEMAS_SUCCESS_MESSAGE, SCHEMAS_ERROR_CODE, SCHEMAS_ERROR_STATUS, SCHEMAS_ERROR_MESSAGE
 
 
 class Schemas(BaseModel):
@@ -10,6 +10,14 @@ class Schemas(BaseModel):
     code: Optional[int] = SCHEMAS_SUCCESS_CODE
     status: Optional[str] = SCHEMAS_SUCCESS_STATUS
     message: Optional[str] = SCHEMAS_SUCCESS_MESSAGE
+    data: Optional[Union[BaseModel, dict, list, str, bool, None]] = None
+
+
+class SchemasError(BaseModel):
+    """状态返回"""
+    code: Optional[int] = SCHEMAS_ERROR_CODE
+    status: Optional[str] = SCHEMAS_ERROR_STATUS
+    message: Optional[str] = SCHEMAS_ERROR_MESSAGE
     data: Optional[Union[BaseModel, dict, list, str, bool, None]] = None
 
 

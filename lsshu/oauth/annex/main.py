@@ -1,11 +1,11 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Security, UploadFile, File
+from fastapi import APIRouter, Depends, Security, UploadFile, File
 from sqlalchemy.orm import Session
 
 from lsshu.internal.db import dbs
 from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
-from lsshu.internal.schema import ModelScreenParams, Schemas
+from lsshu.internal.schema import ModelScreenParams, Schemas, SchemasError
 from lsshu.oauth.user.schema import SchemasOAuthScopes
 
 from lsshu.oauth.annex.crud import CRUD
@@ -64,7 +64,7 @@ async def get_model(pk: int, db: Session = Depends(dbs), auth: SchemasOAuthScope
     """
     db_model = CRUD.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(name.capitalize()))
+        return SchemasError(message="Data Not Found")
     return Schemas(data=SchemasResponse(**db_model))
 
 
@@ -112,7 +112,7 @@ async def update_put_model(pk: int, item: SchemasStoreUpdate, db: Session = Depe
     """
     db_model = CRUD.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(name.capitalize()))
+        return SchemasError(message="Data Not Found")
     bool_model = CRUD.update(db=db, pk=pk, item=item)
     return Schemas(data=SchemasResponse(**bool_model.to_dict()))
 
@@ -129,7 +129,7 @@ async def update_patch_model(pk: int, item: SchemasStoreUpdate, db: Session = De
     """
     db_model = CRUD.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(name.capitalize()))
+        return SchemasError(message="Data Not Found")
     bool_model = CRUD.update(db=db, pk=pk, item=item, exclude_unset=True)
     return Schemas(data=SchemasResponse(**bool_model.to_dict()))
 
@@ -147,7 +147,7 @@ async def delete_model(pk: int, db: Session = Depends(dbs), auth: SchemasOAuthSc
 
 
 @router.delete("/{}".format(name), name="deletes {}".format(name))
-async def delete_role_models(pks: List[int], db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.delete" % name])):
+async def delete_models(pks: List[int], db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user, scopes=scopes + ["%s.delete" % name])):
     """
     :param pks:
     :param db:

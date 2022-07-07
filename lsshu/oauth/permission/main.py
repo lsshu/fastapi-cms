@@ -1,12 +1,12 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, Security, HTTPException, status
+from fastapi import APIRouter, Depends, Security
 from sqlalchemy.orm import Session
 
 from config import OAUTH_DEFAULT_TAGS
 from lsshu.internal.db import dbs
 from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
-from lsshu.internal.schema import ModelScreenParams, Schemas
+from lsshu.internal.schema import ModelScreenParams, Schemas, SchemasError
 from lsshu.oauth.model import permission_name
 from lsshu.oauth.permission.crud import CRUDOAuthPermission
 from lsshu.oauth.permission.schema import SchemasOAuthPermissionPaginateItem, SchemasOAuthPermissionTreeStatusResponse, SchemasOAuthPermissionResponse, \
@@ -138,8 +138,7 @@ async def get_model(pk: int, db: Session = Depends(dbs), auth: SchemasOAuthScope
     """
     db_model = CRUDOAuthPermission.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="{} not found".format(permission_name.capitalize()))
+        return SchemasError(message="Data Not Found")
     return Schemas(data=SchemasOAuthPermissionResponse(**db_model.to_dict()))
 
 
@@ -154,8 +153,7 @@ async def store_model(item: SchemasOAuthPermissionStoreUpdate, db: Session = Dep
     """
     db_model = CRUDOAuthPermission.first(db=db, where=("name", item.name))
     if db_model is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="{} already registered".format(permission_name.capitalize()))
+        return SchemasError(message="Data Already Registered")
     bool_model = CRUDOAuthPermission.store(db=db, item=item)
     return Schemas(data=SchemasOAuthPermissionResponse(**bool_model.to_dict()))
 
@@ -172,8 +170,7 @@ async def update_put_model(pk: int, item: SchemasOAuthPermissionStoreUpdate, db:
     """
     db_model = CRUDOAuthPermission.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="{} not found".format(permission_name.capitalize()))
+        return SchemasError(message="Data Not Found")
     bool_model = CRUDOAuthPermission.update(db=db, pk=pk, item=item)
     return Schemas(data=SchemasOAuthPermissionResponse(**bool_model.to_dict()))
 
@@ -190,8 +187,7 @@ async def update_patch_model(pk: int, item: SchemasOAuthPermissionStoreUpdate, d
     """
     db_model = CRUDOAuthPermission.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="{} not found".format(permission_name.capitalize()))
+        return SchemasError(message="Data Not Found")
     bool_model = CRUDOAuthPermission.update(db=db, pk=pk, item=item, exclude_unset=True)
     return Schemas(data=SchemasOAuthPermissionResponse(**bool_model.to_dict()))
 
@@ -239,7 +235,7 @@ async def delete_model(pk: int, db: Session = Depends(dbs), auth: SchemasOAuthSc
 
 
 @router.delete("/{}".format(permission_name), name="deletes {}".format(permission_name))
-async def delete_permission_models(pks: List[int], db: Session = Depends(dbs),
+async def delete_models(pks: List[int], db: Session = Depends(dbs),
                                    auth: SchemasOAuthScopes = Security(auth_user, scopes=permission_scopes + ["%s.delete" % permission_name])):
     """
     :param pks:

@@ -1,12 +1,12 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, Security, HTTPException, status
+from fastapi import APIRouter, Depends, Security
 from sqlalchemy.orm import Session
 
 from config import OAUTH_DEFAULT_TAGS
 from lsshu.internal.db import dbs
 from lsshu.internal.depends import model_screen_params, model_post_screen_params, auth_user
-from lsshu.internal.schema import ModelScreenParams, Schemas
+from lsshu.internal.schema import ModelScreenParams, Schemas, SchemasError
 from lsshu.oauth.model import role_name
 from lsshu.oauth.permission.crud import CRUDOAuthPermission
 from lsshu.oauth.role.crud import CRUDOAuthRole
@@ -71,7 +71,7 @@ async def get_model(pk: int, db: Session = Depends(dbs), auth: SchemasOAuthScope
     """
     db_model = CRUDOAuthRole.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(role_name.capitalize()))
+        return SchemasError(message="Data Not Found")
     return Schemas(data=SchemasOAuthRoleResponse(**db_model))
 
 
@@ -86,8 +86,7 @@ async def store_model(item: SchemasOAuthRoleStoreUpdate, db: Session = Depends(d
     """
     db_model = CRUDOAuthRole.first(db=db, where=("name", item.name))
     if db_model is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="{} already registered".format(role_name.capitalize()))
+        return SchemasError(message="Data Already Registered")
     bool_model = CRUDOAuthRole.store(db=db, item=item)
     return Schemas(data=SchemasOAuthRoleResponse(**bool_model.to_dict()))
 
@@ -104,7 +103,7 @@ async def update_put_model(pk: int, item: SchemasOAuthRoleStoreUpdate, db: Sessi
     """
     db_model = CRUDOAuthRole.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(role_name.capitalize()))
+        return SchemasError(message="Data Not Found")
     bool_model = CRUDOAuthRole.update(db=db, pk=pk, item=item)
     return Schemas(data=SchemasOAuthRoleResponse(**bool_model.to_dict()))
 
@@ -121,7 +120,7 @@ async def update_patch_model(pk: int, item: SchemasOAuthRoleStoreUpdate, db: Ses
     """
     db_model = CRUDOAuthRole.first(db=db, pk=pk)
     if db_model is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{} not found".format(role_name.capitalize()))
+        return SchemasError(message="Data Not Found")
     bool_model = CRUDOAuthRole.update(db=db, pk=pk, item=item, exclude_unset=True)
     return Schemas(data=SchemasOAuthRoleResponse(**bool_model.to_dict()))
 
@@ -139,7 +138,7 @@ async def delete_model(pk: int, db: Session = Depends(dbs), auth: SchemasOAuthSc
 
 
 @router.delete("/{}".format(role_name), name="deletes {}".format(role_name))
-async def delete_role_models(pks: List[int], db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user, scopes=role_scopes + ["%s.delete" % role_name])):
+async def delete_models(pks: List[int], db: Session = Depends(dbs), auth: SchemasOAuthScopes = Security(auth_user, scopes=role_scopes + ["%s.delete" % role_name])):
     """
     :param pks:
     :param db:
