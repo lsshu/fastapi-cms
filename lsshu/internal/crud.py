@@ -355,6 +355,8 @@ class BaseCRUD(object):
                         query = query.filter(or_(*_filters))
                 elif where[1] in ["between"] and type(where[2]) in [list, tuple] and len(where[2]) == 2:
                     query = query.filter(getattr(getattr(cls.params_model, where[0]), where[1])(where[2][0], where[2][1]))
+                elif where[1] in ["in"] and type(where[2]) in [list, tuple]:
+                    query = query.filter(getattr(getattr(cls.params_model, where[0]), "in_")(where[2]))
                 else:
                     query = query.filter(getattr(getattr(cls.params_model, where[0]), where[1])(where[2]))
         cls.params_query = query
