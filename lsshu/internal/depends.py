@@ -28,7 +28,7 @@ def model_post_screen_params(data: ModelScreenParams = None):
     order = []
     [order.extend(list(s.items())) for s in data.order]
     data.order = order
-    where = [(w['key'], w['condition'], w['value']) for w in data.where if 'value' in w and w['value']]
+    where = [(w['key'], w['condition'], w['value']) for w in data.where if 'value' in w and (w['value'] or w['value'] is False or w['value'] is 0)]
     data.where = where
     return data
 
