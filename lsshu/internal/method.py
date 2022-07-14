@@ -163,3 +163,41 @@ def write_file(path, content, mode="wb", **kwargs):
         return True
     else:
         return False
+
+
+def count(arr: list):
+    """计算数据元素总和"""
+    total = 0
+    for num in arr:
+        total += num
+    return total
+
+
+def probability_extract(collect: list, key: str = "probability", type=None):
+    """
+    概率抽取
+    :param collect: 抽取list
+    :param key: 概率 键
+    :param type: 概率 键
+    :return:
+    """
+    import random
+    def get(ob, key, default):
+        if type == "dict":
+            return ob.get(key, default)
+        else:
+            return getattr(ob, key, default)
+
+    res = None
+    sum = count([get(ob, key, 0) for ob in collect])
+    if sum > 0:
+        randint = random.randint(1, sum)
+        for ob in collect:
+            probability = get(ob, key, 0)
+            if randint > probability:
+                randint -= probability
+            else:
+                res = ob
+                break
+        return res
+    return None

@@ -12,9 +12,10 @@ class BaseCRUD(object):
     params_model = Model  # 操作模型
     params_db = Session  # db实例
     params_query = None  # 查询实例
+    params_relation: dict = {}  # 关联表 用于join等
     params_relationship: dict = {}  # 多对多时使用
     params_action_method: list = [
-        "start", "pseudo_deletion", "query", "where", "order",
+        "start", "pseudo_deletion", "query", "where", "join", "order",
         "page", "offset", "limit", "clear_params", "end"
     ]
     params: dict = {
@@ -92,8 +93,8 @@ class BaseCRUD(object):
         :param kwargs:
         :return:
         """
-        data = cls.action_params(**kwargs).action().params_query.all()
-        return data
+        query = cls.action_params(**kwargs).action().params_query
+        return query.all()
 
     @classmethod
     def count(cls, **kwargs) -> int:
@@ -294,71 +295,107 @@ class BaseCRUD(object):
         return cls
 
     @classmethod
-    def filter_where(cls, where: Union[list, tuple, None] = None):
+    def join(cls, join: Union[list, tuple, None] = None):
+        """
+        join=[('sale', [('status', True)], 'join')]
+        :param join:
+        :return:
+        """
+        if bool(join):
+            _join = cls.params.get('join', [])
+            if (type(join) == list or type(join) == tuple) and (type(join[0]) == list or type(join[0]) == tuple):
+                _join.extend(join)
+            elif (type(join) == list or type(join) == tuple) and type(join[0]) == str:
+                _join.append(join)
+            cls.params.update({"join": _join})
+        return cls
+
+    @classmethod
+    def action_join(cls):
+        """
+        过滤模型数据条件
+        :return:
+        """
+        join = cls.params.get('join', None)
+        if join and (type(join) == tuple or type(join) == list):  # 设置过滤 like
+            for j in join:
+                if j:
+                    join_model = cls.params_relation.get(j[0], None)
+                    if join_model:
+                        cls.params_query = getattr(cls.params_query, j[2] if len(j) == 3 and j[2] else 'join')(join_model)
+                        for w in j[1]:
+                            cls.filter_where(where=w, model=join_model) if join_model else None
+        cls.params.update({"join": []})
+        return cls
+
+    @classmethod
+    def filter_where(cls, where: Union[list, tuple, None] = None, model=None):
         """
         过滤数据条件
         :param where:
+        :param model:
         :return:
         """
         query = cls.params_query
+        params_model = cls.params_model if not model else model
         if bool(where) and (type(where) == tuple or type(where) == list):
             if len(where) == 2:
                 """('content', '西')"""
-                query = query.filter(getattr(cls.params_model, where[0]) == where[1])
+                query = query.filter(getattr(params_model, where[0]) == where[1])
             elif len(where) == 3:
                 if where[1] == "==" or where[1] == "=" or where[1] == "eq":
                     """('content', '==', '西')"""
-                    query = query.filter(getattr(cls.params_model, where[0]) == where[2])
+                    query = query.filter(getattr(params_model, where[0]) == where[2])
                 elif where[1] == "!=" or where[1] == "<>" or where[1] == "><" or where[1] == "neq" or where[1] == "ne":
                     """('content', '!=', '西')"""
-                    query = query.filter(getattr(cls.params_model, where[0]) != where[2])
+                    query = query.filter(getattr(params_model, where[0]) != where[2])
                 elif where[1] == ">" or where[1] == "gt":
                     """('content', '>', '西')"""
-                    query = query.filter(getattr(cls.params_model, where[0]) > where[2])
+                    query = query.filter(getattr(params_model, where[0]) > where[2])
                 elif where[1] == ">=" or where[1] == "ge":
                     """('content', '>=', '西')"""
-                    query = query.filter(getattr(cls.params_model, where[0]) >= where[2])
+                    query = query.filter(getattr(params_model, where[0]) >= where[2])
                 elif where[1] == "<" or where[1] == "lt":
                     """('content', '<', '西')"""
-                    query = query.filter(getattr(cls.params_model, where[0]) < where[2])
+                    query = query.filter(getattr(params_model, where[0]) < where[2])
                 elif where[1] == "<=" or where[1] == "le":
                     """('content', '<=', '西')"""
-                    query = query.filter(getattr(cls.params_model, where[0]) <= where[2])
+                    query = query.filter(getattr(params_model, where[0]) <= where[2])
                 elif where[1] in ["like", "ilike"]:
                     if not where[2] is None:
                         """('content', 'like', '西')"""
                         query = query.filter(
-                            getattr(getattr(cls.params_model, where[0]), where[1])("%" + where[2] + "%")
+                            getattr(getattr(params_model, where[0]), where[1])("%" + where[2] + "%")
                         )
                 elif where[1] in ["or"]:
                     if type(where[0]) == tuple or type(where[0]) == list:
                         """(['name','content'], 'or', '西')"""
-                        _filters = [(getattr(cls.params_model, fil) == where[2]) for fil in where[0]]
+                        _filters = [(getattr(params_model, fil) == where[2]) for fil in where[0]]
                         query = query.filter(or_(*_filters))
 
                     if type(where[0]) == str and (type(where[2]) == tuple or type(where[2]) == list):
                         """('name', 'or', ['西', '西'])"""
-                        _filters = [(getattr(cls.params_model, where[0]) == fil) for fil in where[2]]
+                        _filters = [(getattr(params_model, where[0]) == fil) for fil in where[2]]
                         query = query.filter(or_(*_filters))
                 elif where[1] in ["or_like", "or_ilike"]:
                     if type(where[0]) == tuple or type(where[0]) == list:
                         """(['name','content'], 'or_like', '西')"""
-                        _filters = [(getattr(getattr(cls.params_model, fil), where[1][3:])("%" + where[2] + "%")) for
+                        _filters = [(getattr(getattr(params_model, fil), where[1][3:])("%" + where[2] + "%")) for
                                     fil in
                                     where[0]]
                         query = query.filter(or_(*_filters))
                     if type(where[0]) == str and (type(where[2]) == tuple or type(where[2]) == list):
                         """('name', 'or_like', ['西', '西'])"""
-                        _filters = [(getattr(getattr(cls.params_model, where[0]), where[1][3:])("%" + fil + "%")) for
+                        _filters = [(getattr(getattr(params_model, where[0]), where[1][3:])("%" + fil + "%")) for
                                     fil in
                                     where[2]]
                         query = query.filter(or_(*_filters))
                 elif where[1] in ["between"] and type(where[2]) in [list, tuple] and len(where[2]) == 2:
-                    query = query.filter(getattr(getattr(cls.params_model, where[0]), where[1])(where[2][0], where[2][1]))
+                    query = query.filter(getattr(getattr(params_model, where[0]), where[1])(where[2][0], where[2][1]))
                 elif where[1] in ["in"] and type(where[2]) in [list, tuple]:
-                    query = query.filter(getattr(getattr(cls.params_model, where[0]), "in_")(where[2]))
+                    query = query.filter(getattr(getattr(params_model, where[0]), "in_")(where[2]))
                 else:
-                    query = query.filter(getattr(getattr(cls.params_model, where[0]), where[1])(where[2]))
+                    query = query.filter(getattr(getattr(params_model, where[0]), where[1])(where[2]))
         cls.params_query = query
         return cls
 
