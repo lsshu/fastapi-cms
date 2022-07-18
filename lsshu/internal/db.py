@@ -40,4 +40,5 @@ class Model(Base):
         ORM转dict
         :return:
         """
-        return {key: getattr(self, key, None) for key in dir(self) if not (key[0:2] == "__" or key[0:4] == "_sa_" or key in ["to_dict", "metadata"])}
+        columns = [c.name for c in self.__table__.columns] + [name for name, obj in vars(self.__class__).items() if isinstance(obj, property)]
+        return {key: getattr(self, key, None) for key in columns}

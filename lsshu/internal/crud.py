@@ -124,24 +124,13 @@ class BaseCRUD(object):
         :return:
         """
         import math
-        cls.action_params(**kwargs)
-        page = cls.params.get('page', 1)
         limit = cls.params.get('limit', 0)
-
-        items = cls.action().params_query.all()
-        total = cls.action_clear_params(('limit', 'page', 'offset')).action().params_query.count()
+        items = cls.action_params(**kwargs).action().params_query.all()
+        total = cls.action_params(**kwargs).action_clear_params(('limit', 'page', 'offset')).action().params_query.count()
         pages = math.ceil(total / limit) if type(total) is int and type(limit) is int and limit != 0 else 1
-        next_num = page + 1 if pages > page else None
-        prev_num = page - 1 if page > 1 else None
         return {
-            # "has_next": bool(next_num),  # 如果下一页存在，返回True
-            # "has_prev": bool(prev_num),  # 如果上一页存在，返回True
             "items": items,  # 当前页的数据列表
-            # "next_num": next_num,  # 下一页的页码
-            # "prev_num": prev_num,  # 上一页的页码
-            # "page": page,  # 当前页码
             "pages": pages,  # 总页数
-            # "per_page": limit,  # 每页的条数
             "total": total,  # 总条数
         }
 

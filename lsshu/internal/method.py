@@ -201,3 +201,17 @@ def probability_extract(collect: list, key: str = "probability", type=None):
                 break
         return res
     return None
+
+
+def file_to_base64(path: str):
+    import os
+    import base64
+    import filetype
+    content = bytes()
+    if os.path.isfile(path):
+        with open(path, 'rb') as f:
+            content = f.read()
+
+    base = base64.b64encode(content).decode()
+    type = filetype.guess(path)
+    return "data:%s;base64,%s" % (type.mime, base)

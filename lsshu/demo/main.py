@@ -65,7 +65,7 @@ async def get_model(pk: int, db: Session = Depends(dbs), auth: SchemasOAuthScope
     db_model = CRUD.first(db=db, pk=pk)
     if db_model is None:
         return SchemasError(message="Data Not Found")
-    return Schemas(data=SchemasResponse(**db_model))
+    return Schemas(data=SchemasResponse(**db_model.to_dict()))
 
 
 @router.post('/{}'.format(name), name="get {}".format(name))

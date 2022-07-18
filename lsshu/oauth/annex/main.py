@@ -65,7 +65,7 @@ async def get_model(pk: int, db: Session = Depends(dbs), auth: SchemasOAuthScope
     db_model = CRUD.first(db=db, pk=pk)
     if db_model is None:
         return SchemasError(message="Data Not Found")
-    return Schemas(data=SchemasResponse(**db_model))
+    return Schemas(data=SchemasResponse(**db_model.to_dict()))
 
 
 @router.post('/{}'.format(name), name="get {}".format(name))
@@ -97,7 +97,7 @@ async def store_model(file: UploadFile = File(...), db: Session = Depends(dbs),
                 width, height = (0, 0)
             db_model = CRUD.store(db=db,
                                   item=SchemasStoreUpdate(filename=file.filename, content_type=file.content_type, md5=md5, path=path, size=size, width=width, height=height))
-    return Schemas(data=SchemasResponse(**db_model.to_dict(), preview_path=db_model.preview_path))
+    return Schemas(data=SchemasResponse(**db_model.to_dict()))
 
 
 @router.put("/{}/{{pk}}".format(name), name="update {}".format(name))
