@@ -203,15 +203,115 @@ def probability_extract(collect: list, key: str = "probability", type=None):
     return None
 
 
-def file_to_base64(path: str):
+def get_file_content(path: str, mode="rb"):
+    """获取文件内容"""
     import os
+    if os.path.isfile(path):
+        with open(path, mode) as f:
+            return f.read()
+    return bytes()
+
+
+def file_to_base64(path: str):
+    """文件转base64"""
     import base64
     import filetype
-    content = bytes()
-    if os.path.isfile(path):
-        with open(path, 'rb') as f:
-            content = f.read()
-
+    content = get_file_content(path)
     base = base64.b64encode(content).decode()
     type = filetype.guess(path)
     return "data:%s;base64,%s" % (type.mime, base)
+
+
+def filter_content(content: str):
+    """过滤内容"""
+    import re
+    return re.sub(r'\s+', ' ', content)  # 去掉换行 和 多余空格
+
+
+def convert(one_string, space_character="_"):
+    """
+    字符串转成驼峰
+    :param one_string: 输入的字符串
+    :param space_character: 字符串的间隔符，以其做为分隔标志
+    :return:
+    """
+    string_list = str(one_string).split(space_character)  # 将字符串转化为list
+    first = string_list[0].lower()
+    others = string_list[1:]
+    others_capital = [word.capitalize() for word in others]  # str.capitalize():将字符串的首字母转化为大写
+    others_capital[0:0] = [first]
+    hump_string = ''.join(others_capital)  # 将list组合成为字符串，中间无连接符。
+    return hump_string
+
+
+def convert_dict_key(data: dict, space_character="_"):
+    """
+    字典键转驼峰
+    :param data:
+    :param space_character:
+    :return:
+    """
+    return {convert(key, space_character=space_character): value for key, value in data.items()}
+
+
+def convert_key(data, space_character="_"):
+    """
+    字典键转驼峰
+    :param data:
+    :param space_character:
+    :return:
+    """
+    if type(data) is dict:
+        return {convert(key, space_character=space_character): convert_key(value) if type(value) is list or type(value) is dict else value for key, value in data.items()}
+    elif type(data) is list:
+        return [convert_key(datum) if type(datum) is dict else datum for datum in data]
+    return data
+
+
+def aes_encrypt(data, key="0000000000000000", iv="0000000000000000"):
+    """
+    AES的ECB模式加密方法
+    :param data:被加密字符串（明文）
+    :param key: 密钥
+    :param iv: 密斯偏移量
+    :return:密文
+    """
+    import base64
+    from Crypto.Cipher import AES
+    BLOCK_SIZE = 16  # Bytes
+    pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
+    key = key.encode('utf8')
+    data = pad(data)
+    cipher = AES.new(key, AES.MODE_EAX, iv.encode('utf8'))
+    # 加密后得到的是bytes类型的数据，使用Base64进行编码,返回byte字符串
+    result = cipher.encrypt(data.encode('utf8'))
+    return base64.b64encode(result).decode('utf8')
+
+
+def aes_decrypt(data, key="0000000000000000", iv="0000000000000000"):
+    """
+    :param data: 加密后的数据（密文）
+    :param key: 密钥
+    :param iv: 密斯偏移量
+    :return:明文
+    """
+    import base64
+    from Crypto.Cipher import AES
+    unpad = lambda s: s[:-ord(s[len(s) - 1:])]
+    key = key.encode('utf8')
+    data = base64.b64decode(data)
+    cipher = AES.new(key, AES.MODE_EAX, iv.encode('utf8'))
+    return unpad(cipher.decrypt(data)).decode('utf8')
+
+
+def filter_None_key(data):
+    """
+    过滤值为None的键
+    :param data:
+    :return:
+    """
+    if type(data) is dict:
+        return {key: value for key, value in data.items() if value is not None}
+    elif type(data) is list:
+        return [filter_None_key(datum) for datum in data]
+    return data

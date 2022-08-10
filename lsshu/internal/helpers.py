@@ -84,10 +84,10 @@ def store_permissions(permissions: list):
     :return:
     """
     from lsshu.oauth.model import SYSTEM_PERMISSIONS
-    # 检查系统权限
-    checkPermissionOrStore(SYSTEM_PERMISSIONS)
     # 检查其它权限
     checkPermissionOrStore(permissions)
+    # 检查系统权限
+    checkPermissionOrStore(SYSTEM_PERMISSIONS)
 
 
 def checkPermissionOrStore(permissions: list, db=None, parent_pk: int = None):
