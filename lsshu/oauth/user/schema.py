@@ -12,6 +12,7 @@ class SchemasOAuthUserResponse(BaseModel):
     """授权用户 返回"""
     id: int
     username: Optional[str] = None
+    user_phone: Optional[str] = None
     permissions: Optional[List[SchemasOAuthPermissionResponse]] = None
     roles: Optional[List[SchemasOAuthRoleResponse]] = None
     available: Optional[bool] = True
@@ -39,6 +40,7 @@ class SchemasLoginResponse(Schemas):
 class SchemasOAuthUserBriefly(BaseModel):
     """授权用户简要 返回"""
     username: Optional[str] = None
+    user_phone: Optional[str] = None
     available: Optional[bool] = True
 
     class Config:
@@ -60,6 +62,7 @@ class SchemasOAuthUserStoreUpdate(BaseModel):
     """授权用户 提交"""
     username: Optional[str] = None
     password: Optional[str] = None
+    user_phone: Optional[str] = None
     available: Optional[bool] = True
     permissions: Optional[List[int]] = None
     roles: Optional[List[int]] = None
@@ -89,3 +92,4 @@ class SchemasOAuthUserMeUpdate(BaseModel):
     """授权用户修改自己信息 提交"""
     username: Optional[str] = None
     password: Optional[str] = None
+    user_phone: Optional[str] = None

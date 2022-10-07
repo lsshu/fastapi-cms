@@ -16,7 +16,8 @@ class BaseCRUD(object):
     params_relationship: dict = {}  # 多对多时使用
     params_action_method: list = [
         "start", "pseudo_deletion", "query", "where", "join", "order",
-        "page", "offset", "limit", "clear_params", "end"
+        "page", "offset", "limit", "end"
+        # "page", "offset", "limit", "clear_params", "end"
     ]
     params: dict = {
         "where": [],  # 查询条件
@@ -124,14 +125,15 @@ class BaseCRUD(object):
         :return:
         """
         import math
-        limit = cls.params.get('limit', 0)
         items = cls.action_params(**kwargs).action().params_query.all()
+        limit = cls.params.get('limit', 0)
         total = cls.action_params(**kwargs).action_clear_params(('limit', 'page', 'offset')).action().params_query.count()
         pages = math.ceil(total / limit) if type(total) is int and type(limit) is int and limit != 0 else 1
         return {
             "items": items,  # 当前页的数据列表
             "pages": pages,  # 总页数
             "total": total,  # 总条数
+            "limit": limit,  # 页条数
         }
 
     @classmethod

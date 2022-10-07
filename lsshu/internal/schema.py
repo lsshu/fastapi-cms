@@ -26,6 +26,7 @@ class SchemasPaginate(BaseModel):
     items: list  # 当前页的数据列表
     pages: int  # 总页数
     total: int  # 总条数
+    limit: int  # 页条数
 
 
 class ModelScreenParams(BaseModel):

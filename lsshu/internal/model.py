@@ -9,6 +9,7 @@ class _ModelOAuthUsers(Model, BaseNestedSets):
     __abstract__ = True
     username = Column(String(15), nullable=False, unique=True, index=True, comment="名称")
     password = Column(String(128), nullable=False, comment="密码")
+    user_phone = Column(String(11), nullable=True, comment="手机")
     available = Column(Boolean, default=1, comment="是否有效")
 
 
@@ -34,7 +35,7 @@ class _ModelOAuthAnnexes(Model):
     """ 附件 """
     __abstract__ = True
     filename = Column(String(50), nullable=False, comment="文件名")
-    content_type = Column(String(15), nullable=False, comment="类型")
+    content_type = Column(String(100), nullable=False, comment="类型")
     path = Column(String(100), nullable=True, comment="路径")
     md5 = Column(String(32), nullable=True, comment="md5", index=True)
     size = Column(Integer, nullable=False, comment="SIZE")
