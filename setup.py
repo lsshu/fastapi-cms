@@ -2,7 +2,7 @@
 @Time    ：2022/10/7 14:20
 @Author  ：Lsshu
 @File    ：setup.py
-@Version ：2.0.7
+@Version ：2.0.8
 @Project ：lsshu-cms
 """
 from setuptools import setup, find_packages
@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-setup(name="lsshu-cms", version="2.0.6", description="FastAPI 开发的CMS", python_requires=">=3.8",
+setup(name="lsshu-cms", version="2.0.8", description="FastAPI 开发的CMS", python_requires=">=3.8",
       author="Lsshu", author_email="admin@lsshu.cn", url="https://github.com/lsshu/fastapi-cms",
       packages=find_packages(), long_description=long_description,
       long_description_content_type="text/markdown", license="GPLv3",
