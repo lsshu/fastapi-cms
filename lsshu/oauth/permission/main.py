@@ -10,7 +10,7 @@ from lsshu.internal.schema import ModelScreenParams, Schemas, SchemasError
 from lsshu.oauth.model import permission_name
 from lsshu.oauth.permission.crud import CRUDOAuthPermission
 from lsshu.oauth.permission.schema import SchemasOAuthPermissionPaginateItem, SchemasOAuthPermissionTreeStatusResponse, SchemasOAuthPermissionResponse, \
-    SchemasOAuthPermissionStoreUpdate, SchemasOAuthPermissionMenuStatusResponse, SchemasOAuthPermissionTreeResponse
+    SchemasOAuthPermissionStoreUpdate, SchemasOAuthPermissionMenuStatusResponse, SchemasOAuthPermissionTreeResponse, SchemasOAuthPermissionMenu
 from lsshu.oauth.user.schema import SchemasOAuthScopes
 
 tags = OAUTH_DEFAULT_TAGS + ['Permission']
@@ -104,10 +104,11 @@ async def menus_permission_models(db: Session = Depends(dbs), auth: SchemasOAuth
         return nodes.filter(getattr(CRUDOAuthPermission.params_model, 'is_menu').is_(True)).filter(getattr(CRUDOAuthPermission.params_model, 'scope').in_(auth.scopes))
 
     def json_fields(node):
-        return node.to_dict()
+        return SchemasOAuthPermissionMenu(**node.to_dict()).dict()
+        # return node.to_dict()
 
     db_model_list = CRUDOAuthPermission.get_tree(db=db, json=True, json_fields=json_fields, query=query_fun)
-    return SchemasOAuthPermissionMenuStatusResponse(data=db_model_list)
+    return Schemas(data=db_model_list)
 
 
 @router.post('/{}.menus.post'.format(permission_name), name="post {}".format(permission_name))
@@ -122,10 +123,11 @@ async def menus_permission_models(db: Session = Depends(dbs), auth: SchemasOAuth
         return nodes.filter(getattr(CRUDOAuthPermission.params_model, 'is_menu').is_(True)).filter(getattr(CRUDOAuthPermission.params_model, 'scope').in_(auth.scopes))
 
     def json_fields(node):
-        return node.to_dict()
+        return SchemasOAuthPermissionMenu(**node.to_dict()).dict()
+        # return node.to_dict()
 
     db_model_list = CRUDOAuthPermission.get_tree(db=db, json=True, json_fields=json_fields, query=query_fun)
-    return SchemasOAuthPermissionMenuStatusResponse(data=db_model_list)
+    return Schemas(data=db_model_list)
 
 
 @router.get('/{}/{{pk}}'.format(permission_name), name="get {}".format(permission_name))

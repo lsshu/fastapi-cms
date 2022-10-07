@@ -1,8 +1,8 @@
 """
-@Time    ：2022/7/7 11:40
+@Time    ：2022/10/7 14:20
 @Author  ：Lsshu
 @File    ：setup.py
-@Version ：2.0.6
+@Version ：2.0.7
 @Project ：lsshu-cms
 """
 from setuptools import setup, find_packages
