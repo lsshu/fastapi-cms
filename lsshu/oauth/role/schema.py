@@ -3,14 +3,14 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 from lsshu.internal.schema import SchemasPaginate
-from lsshu.oauth.permission.schema import SchemasOAuthPermissionResponse
+from lsshu.oauth.permission.schema import SchemasOAuthPermissionThinResponse
 
 
 class SchemasOAuthRoleResponse(BaseModel):
     """角色 返回"""
     id: int
     name: Optional[str] = None
-    permissions: Optional[List[SchemasOAuthPermissionResponse]] = None
+    permissions: Optional[List[SchemasOAuthPermissionThinResponse]] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

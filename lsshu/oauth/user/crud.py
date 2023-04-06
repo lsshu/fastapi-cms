@@ -29,3 +29,10 @@ class CRUDOAuthUser(CRUDTree):
                 delattr(item, "password")
 
         return super(CRUDOAuthUser, cls).update(db=db, pk=pk, item=item, **kwargs)
+
+    @classmethod
+    def all(cls, **kwargs):
+        kwargs.update({
+            "order": [("sort", "asc")]
+        })
+        return super().all(**kwargs)

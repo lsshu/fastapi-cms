@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Security, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -71,8 +71,33 @@ def token_authenticate_access_token(db, username: str, password: str, scopes: li
     )
 
 
+from fastapi.param_functions import Form
+
+
+class _OAuth2PasswordRequestForm(OAuth2PasswordRequestForm):
+    def __init__(
+            self,
+            grant_type: str = Form(default=None, regex="password"),
+            username: str = Form(),
+            password: str = Form(),
+            scope: str = Form(default=""),
+            client_id: Optional[str] = Form(default=None),
+            client_secret: Optional[str] = Form(default=None),
+            verification_username: Optional[str] = Form(default=None),
+            verification_code: Optional[str] = Form(default=None),
+    ):
+        self.grant_type = grant_type
+        self.username = username
+        self.password = password
+        self.scopes = scope.split()
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.verification_username = verification_username
+        self.verification_code = verification_code
+
+
 @router.post(OAUTH_TOKEN_URI)
-async def login_for_access_token(db: Session = Depends(dbs), form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(db: Session = Depends(dbs), form_data: _OAuth2PasswordRequestForm = Depends()):
     """
     获取登录授权:
     - **form_data**: 登录数据
@@ -84,6 +109,7 @@ async def login_for_access_token(db: Session = Depends(dbs), form_data: OAuth2Pa
         scopes=form_data.scopes
     )
     return SchemasLoginResponse(data=SchemasLogin(access_token=access_token, token_type="bearer"))
+
 
 
 @router.get(OAUTH_SCOPES_URI)

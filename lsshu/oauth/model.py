@@ -46,6 +46,7 @@ class ModelOAuthUsers(_ModelOAuthUsers):
         Column('rol_id', Integer, ForeignKey("%s.id" % role_table_name), primary_key=True, comment="角色"),
         Column('use_id', Integer, ForeignKey("%s.id" % user_table_name), primary_key=True, comment="用户"),
     ))
+    sort = Column(Integer, default=999, comment="排序")
 
 
 class ModelOAuthRoles(_ModelOAuthRoles):

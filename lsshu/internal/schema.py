@@ -23,10 +23,10 @@ class SchemasError(BaseModel):
 
 class SchemasPaginate(BaseModel):
     """分页"""
-    items: list  # 当前页的数据列表
-    pages: int  # 总页数
-    total: int  # 总条数
-    limit: int  # 页条数
+    items: Optional[list] = None  # 当前页的数据列表
+    pages: Optional[int] = None  # 总页数
+    total: Optional[int] = None  # 总条数
+    limit: Optional[int] = None  # 页条数
 
 
 class ModelScreenParams(BaseModel):
@@ -34,4 +34,12 @@ class ModelScreenParams(BaseModel):
     page: Optional[int] = 1
     limit: Optional[int] = 25
     where: Optional[Union[dict, list]] = []
+    join: Optional[Union[dict, list]] = []
+    order: Optional[list] = []
+
+
+class ModelScreenParamsForAll(BaseModel):
+    """获取列表默认参数"""
+    where: Optional[Union[dict, list]] = []
+    join: Optional[Union[dict, list]] = []
     order: Optional[list] = []

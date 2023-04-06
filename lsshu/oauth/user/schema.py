@@ -8,14 +8,28 @@ from lsshu.oauth.permission.schema import SchemasOAuthPermissionResponse
 from lsshu.oauth.role.schema import SchemasOAuthRoleResponse
 
 
+class SchemasOAuthRole(BaseModel):
+    """角色 返回"""
+    id: int
+    name: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        orm_mode = True
+
+
 class SchemasOAuthUserResponse(BaseModel):
     """授权用户 返回"""
     id: int
     username: Optional[str] = None
     user_phone: Optional[str] = None
     permissions: Optional[List[SchemasOAuthPermissionResponse]] = None
-    roles: Optional[List[SchemasOAuthRoleResponse]] = None
+    roles: Optional[List[SchemasOAuthRole]] = None
     available: Optional[bool] = True
+    remarks: Optional[str] = None  # 备注
+    sort: Optional[int] = None  # 排序
+    status: Optional[bool] = None  # 状态
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -67,6 +81,10 @@ class SchemasOAuthUserStoreUpdate(BaseModel):
     permissions: Optional[List[int]] = None
     roles: Optional[List[int]] = None
 
+    remarks: Optional[str] = None  # 备注
+    sort: Optional[int] = None  # 排序
+    status: Optional[bool] = None  # 状态
+
 
 class SchemasOAuthUser(BaseModel):
     """解析加密字段"""
@@ -84,7 +102,7 @@ class SchemasOAuthScopes(BaseModel):
 
 class SchemasParams(BaseModel):
     """参数"""
-    roles: List[SchemasOAuthRoleResponse]
+    roles: List[SchemasOAuthRole]
     permissions: List[SchemasOAuthPermissionResponse]
 
 
@@ -93,3 +111,6 @@ class SchemasOAuthUserMeUpdate(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
     user_phone: Optional[str] = None
+
+
+

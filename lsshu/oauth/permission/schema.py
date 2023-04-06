@@ -23,6 +23,15 @@ class SchemasOAuthPermissionResponse(BaseModel):
         orm_mode = True
 
 
+class SchemasOAuthPermissionThinResponse(BaseModel):
+    """权限 返回"""
+    id: int
+    name: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
 class SchemasOAuthPermissionPaginateItem(SchemasPaginate):
     items: List[SchemasOAuthPermissionResponse]
 

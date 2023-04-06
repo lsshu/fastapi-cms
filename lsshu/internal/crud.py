@@ -197,7 +197,7 @@ class BaseCRUD(object):
                         "id", 'in_', getattr(item, relation)))
                     setattr(_obj, relation, _relation)
                     db.add(_obj), db.commit(), db.close()
-                elif hasattr(item, relation):
+                elif hasattr(item, relation) and relation in item.dict(exclude_unset=True):
                     [getattr(_obj, relation).remove(rela) for rela in getattr(_obj, relation)]
                 delattr(item, relation)
         return item
@@ -330,65 +330,80 @@ class BaseCRUD(object):
         query = cls.params_query
         params_model = cls.params_model if not model else model
         if bool(where) and (type(where) == tuple or type(where) == list):
-            if len(where) == 2:
-                """('content', '西')"""
-                query = query.filter(getattr(params_model, where[0]) == where[1])
-            elif len(where) == 3:
-                if where[1] == "==" or where[1] == "=" or where[1] == "eq":
-                    """('content', '==', '西')"""
-                    query = query.filter(getattr(params_model, where[0]) == where[2])
-                elif where[1] == "!=" or where[1] == "<>" or where[1] == "><" or where[1] == "neq" or where[1] == "ne":
-                    """('content', '!=', '西')"""
-                    query = query.filter(getattr(params_model, where[0]) != where[2])
-                elif where[1] == ">" or where[1] == "gt":
-                    """('content', '>', '西')"""
-                    query = query.filter(getattr(params_model, where[0]) > where[2])
-                elif where[1] == ">=" or where[1] == "ge":
-                    """('content', '>=', '西')"""
-                    query = query.filter(getattr(params_model, where[0]) >= where[2])
-                elif where[1] == "<" or where[1] == "lt":
-                    """('content', '<', '西')"""
-                    query = query.filter(getattr(params_model, where[0]) < where[2])
-                elif where[1] == "<=" or where[1] == "le":
-                    """('content', '<=', '西')"""
-                    query = query.filter(getattr(params_model, where[0]) <= where[2])
-                elif where[1] in ["like", "ilike"]:
-                    if not where[2] is None:
-                        """('content', 'like', '西')"""
-                        query = query.filter(
-                            getattr(getattr(params_model, where[0]), where[1])("%" + where[2] + "%")
-                        )
-                elif where[1] in ["or"]:
-                    if type(where[0]) == tuple or type(where[0]) == list:
-                        """(['name','content'], 'or', '西')"""
-                        _filters = [(getattr(params_model, fil) == where[2]) for fil in where[0]]
-                        query = query.filter(or_(*_filters))
-
-                    if type(where[0]) == str and (type(where[2]) == tuple or type(where[2]) == list):
-                        """('name', 'or', ['西', '西'])"""
-                        _filters = [(getattr(params_model, where[0]) == fil) for fil in where[2]]
-                        query = query.filter(or_(*_filters))
-                elif where[1] in ["or_like", "or_ilike"]:
-                    if type(where[0]) == tuple or type(where[0]) == list:
-                        """(['name','content'], 'or_like', '西')"""
-                        _filters = [(getattr(getattr(params_model, fil), where[1][3:])("%" + where[2] + "%")) for
-                                    fil in
-                                    where[0]]
-                        query = query.filter(or_(*_filters))
-                    if type(where[0]) == str and (type(where[2]) == tuple or type(where[2]) == list):
-                        """('name', 'or_like', ['西', '西'])"""
-                        _filters = [(getattr(getattr(params_model, where[0]), where[1][3:])("%" + fil + "%")) for
-                                    fil in
-                                    where[2]]
-                        query = query.filter(or_(*_filters))
-                elif where[1] in ["between"] and type(where[2]) in [list, tuple] and len(where[2]) == 2:
-                    query = query.filter(getattr(getattr(params_model, where[0]), where[1])(where[2][0], where[2][1]))
-                elif where[1] in ["in"] and type(where[2]) in [list, tuple]:
-                    query = query.filter(getattr(getattr(params_model, where[0]), "in_")(where[2]))
-                else:
-                    query = query.filter(getattr(getattr(params_model, where[0]), where[1])(where[2]))
+            if len(where) == 2 and (type(where[0]) is list or type(where[0]) is tuple) and where[1] == "or":
+                """([('content',"==", '东'),('content','==', '西')], 'or')"""
+                _filters = [cls.filter_item(params_model, fil) for fil in where[0]]
+                query = query.filter(or_(*_filters))
+            else:
+                query = query.filter(cls.filter_item(params_model, where))
         cls.params_query = query
         return cls
+
+    @classmethod
+    def filter_item(cls, model, where):
+        if len(where) == 2:
+            """('content', '西')"""
+            if type(where[0]) is str:
+                return getattr(model, where[0]) == where[1]
+        elif len(where) == 3:
+            if where[1] == "==" or where[1] == "=" or where[1] == "eq":
+                """('content', '==', '西')"""
+                return getattr(model, where[0]) == where[2]
+            elif where[1] == "!=" or where[1] == "<>" or where[1] == "><" or where[1] == "neq" or where[1] == "ne":
+                """('content', '!=', '西')"""
+                return getattr(model, where[0]) != where[2]
+            elif where[1] == ">" or where[1] == "gt":
+                """('content', '>', '西')"""
+                return getattr(model, where[0]) > where[2]
+            elif where[1] == ">=" or where[1] == "ge":
+                """('content', '>=', '西')"""
+                return getattr(model, where[0]) >= where[2]
+            elif where[1] == "<" or where[1] == "lt":
+                """('content', '<', '西')"""
+                return getattr(model, where[0]) < where[2]
+            elif where[1] == "<=" or where[1] == "le":
+                """('content', '<=', '西')"""
+                return getattr(model, where[0]) <= where[2]
+            elif where[1] in ["like", "ilike"]:
+                if not where[2] is None:
+                    """('content', 'like', '西')"""
+                    return getattr(getattr(model, where[0]), where[1])("%" + where[2] + "%")
+            elif where[1] in ["or"]:
+                if type(where[0]) == tuple or type(where[0]) == list:
+                    """(['name','content'], 'or', '西')"""
+                    _filters = [(getattr(model, fil) == where[2]) for fil in where[0]]
+                    return or_(*_filters)
+
+                if type(where[0]) == str and (type(where[2]) == tuple or type(where[2]) == list):
+                    """('name', 'or', ['西', '西'])"""
+                    _filters = [(getattr(model, where[0]) == fil) for fil in where[2]]
+                    return or_(*_filters)
+            elif where[1] in ["or_like", "or_ilike"]:
+                if type(where[0]) == tuple or type(where[0]) == list:
+                    """(['name','content'], 'or_like', '西')"""
+                    _filters = [(getattr(getattr(model, fil), where[1][3:])("%" + where[2] + "%")) for
+                                fil in
+                                where[0]]
+                    return or_(*_filters)
+                if type(where[0]) == str and (type(where[2]) == tuple or type(where[2]) == list):
+                    """('name', 'or_like', ['西', '西'])"""
+                    _filters = [(getattr(getattr(model, where[0]), where[1][3:])("%" + fil + "%")) for
+                                fil in
+                                where[2]]
+                    return or_(*_filters)
+            elif where[1] in ["between"] and type(where[2]) in [list, tuple] and len(where[2]) == 2:
+                return getattr(getattr(model, where[0]), where[1])(where[2][0], where[2][1])
+            elif where[1] in ["datebetween"] and type(where[2]) in [list, tuple] and len(where[2]) == 2:
+                return getattr(getattr(model, where[0]), 'between')(where[2][0], where[2][1])
+            elif where[1] in ["datetimebetween"] and type(where[2]) in [list, tuple] and len(where[2]) == 2:
+                return getattr(getattr(model, where[0]), 'between')("%s 00:00:00" % where[2][0], "%s 23:59:59" % where[2][1])
+            elif where[1] in ["in"] and type(where[2]) in [list, tuple]:
+                return getattr(getattr(model, where[0]), "in_")(where[2])
+            elif where[1] in ["notin"] and type(where[2]) in [list, tuple]:
+                return getattr(getattr(model, where[0]), "notin_")(where[2])
+            else:
+                return getattr(getattr(model, where[0]), where[1])(where[2])
+        return
 
     @classmethod
     def order(cls, order: Union[List[tuple], List[list], Tuple[tuple], Tuple[list], list, tuple]):
@@ -524,6 +539,8 @@ class BaseCRUD(object):
         """
         instance = cls.first(**kwargs)
         if instance:
+            if "where" in kwargs:
+                del kwargs['where']
             return cls.update(**kwargs, pk=getattr(instance, cls.params_pk), exclude_unset=True)
         else:
             del kwargs['where']

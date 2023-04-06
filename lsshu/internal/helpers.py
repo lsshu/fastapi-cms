@@ -34,7 +34,7 @@ def token_access_token(data: dict, key: str, algorithm: str, expires_delta):
     from datetime import datetime, timedelta
     from jose import jwt
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=15))
+    expire = datetime.now() + (expires_delta if expires_delta else timedelta(minutes=15))
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(claims=to_encode, key=key, algorithm=algorithm)
     return encoded_jwt
@@ -106,6 +106,7 @@ def checkPermissionOrStore(permissions: list, db=None, parent_pk: int = None):
         {"name": "创建", "scope": "store"},
         {"name": "更新", "scope": "update"},
         {"name": "删除", "scope": "delete"},
+        {"name": "导出", "scope": "download"},
     ]
     if not db:
         from lsshu.internal.db import SessionLocal
